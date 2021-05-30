@@ -35,13 +35,14 @@
 #include <net/if.h>
 # define NO_OF_CHARS 256
 
-void ProcessPacket(unsigned char* , int);
-void process_udp_packet(unsigned char *Buffer , int Size);
+static bool ProcessPacket(unsigned char* , int);
+static bool process_udp_packet(unsigned char *Buffer , int Size);
 void prefixSuffixArray(char* pat, int M, int* pps);
 void check_pattern(unsigned char *data, int Size);
 int max (int a, int b);
 void badCharHeuristic( char *str, int size, int badchar[NO_OF_CHARS]);
-
+int tcp=0,udp=0,icmp=0,others=0,igmp=0,total=0;
+int flag = 0;
 
 #include "../common/common_params.h"
 #include "../common/common_user_bpf_xdp.h"
@@ -317,12 +318,11 @@ static bool process_packet(struct xsk_socket_info *xsk,
 	 * - Recalculate the icmp checksum */
 
 	if (false) {
-        unsigned char *packet_buffer = *pkt;
         int buffer_size = NUM_FRAMES * FRAME_SIZE;
-        if(!ProcessPacket(pkt, buffer_size))
-            xsk.stats.match = 0;
+        if(!(ProcessPacket(pkt, buffer_size)))
+            xsk->stats.match = 0;
         else
-            xsk.stats.match = 1;
+            xsk->stats.match = 1;
 
 
         // pattern matching
@@ -405,13 +405,14 @@ static bool process_udp_packet(unsigned char *Buffer , int Size) {
     struct udphdr *udph = (struct udphdr *)(Buffer + iphdrlen);
  
     if(ntohs(udph->dest) != 5201)
-        return;
-    else
+        return false;
+    else{
         check_pattern(Buffer + iphdrlen + sizeof(udph) , ( Size - sizeof udph - iph->ihl * 4));
         if (flag == 0)
             return false; // pattern not found
         else
-            return true; // pattern found                      
+            return true; // pattern found 
+    }                     
 }
 
 void check_pattern(unsigned char *data, int Size) {
@@ -626,11 +627,10 @@ static void stats_print(struct stats_record *stats_rec,
 	       stats_rec->tx_bytes / 1000 , bps,
 	       period);
 
-    int match;
     if(stats_rec->match == 0)
-        printf("No pattern found.")
+        printf("No pattern found.");
     else
-        printf("Pattern found.")
+        printf("Pattern found.");
 
 	printf("\n");
 
