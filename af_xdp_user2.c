@@ -35,7 +35,7 @@
 #include <net/if.h>
 # define NO_OF_CHARS 256
 
-static bool ProcessPacket(unsigned char* , int);
+//static bool ProcessPacket(unsigned char* , int);
 static bool process_udp_packet(unsigned char *Buffer , int Size);
 void prefixSuffixArray(char* pat, int M, int* pps);
 void check_pattern(unsigned char *data, int Size);
@@ -297,7 +297,8 @@ static inline void csum_replace2(__sum16 *sum, __be16 old, __be16 new)
 static bool process_packet(struct xsk_socket_info *xsk,
 			   uint64_t addr, uint32_t len)
 {
-	uint8_t *pkt = xsk_umem__get_data(xsk->umem->buffer, addr);
+	uint8_t *pkt = xsk_umem__get_data(xsk->umem->buffer, addr); // data
+	uint64_t *data_end = xsk_umem__add_offset_to_addr(addr); // data_end
     // start address of frame
     /* 
     static inline void *xsk_umem__get_data(void *umem_area, __u64 addr)
@@ -305,9 +306,23 @@ static bool process_packet(struct xsk_socket_info *xsk,
 	    return &((char *)umem_area)[addr];
     }
     */
-
-    struct ethhdr *eth = (struct ethhdr *) pkt;
+	struct ethhdr *eth = (struct ethhdr *) pkt;
+	total++;
+	if (( void *) eth + sizeof (* eth) <= ( void *)data_end ){
+		struct iphdr *ip = ( void *)pkt + sizeof (* eth);
+		if (( void *) ip + sizeof (* ip) <= ( void *)data_end ){
+			if (ip -> protocol == IPPROTO_UDP ) {
+				udp++;
+        		if(!(process_udp_packet(pkt , len)))
+            		xsk->stats.match = 0;
+			}else{
+				others++;
+            	xsk->stats.match = 1;
+			}
+		}
+	}
     
+
         /* Lesson#3: Write an IPv6 ICMP ECHO parser to send responses
 	 *
 	 * Some assumptions to make it easier:
@@ -318,13 +333,6 @@ static bool process_packet(struct xsk_socket_info *xsk,
 	 * - Recalculate the icmp checksum */
 
 	if (false) {
-        int buffer_size = NUM_FRAMES * FRAME_SIZE;
-        if(!(ProcessPacket(pkt, buffer_size)))
-            xsk->stats.match = 0;
-        else
-            xsk->stats.match = 1;
-
-
         // pattern matching
 		int ret;
 		uint32_t tx_idx = 0;
@@ -377,13 +385,12 @@ static bool process_packet(struct xsk_socket_info *xsk,
 	return false;
 }
 
-static bool ProcessPacket(unsigned char* buffer, int size) {
+/*static bool ProcessPacket(unsigned char* buffer, int size) {
     //Get the IP Header part of this packet
     struct iphdr *iph = (struct iphdr*)buffer;
     ++total;
     switch (iph->protocol) { //Check the Protocol and do accordingly...
         case 17: //UDP Protocol
-            ++udp;
             if(!process_udp_packet(buffer , size))
                 return false; // pattern not found
             else
@@ -393,7 +400,7 @@ static bool ProcessPacket(unsigned char* buffer, int size) {
             ++others;
             return false;
     }
-}
+}*/
  
  
 static bool process_udp_packet(unsigned char *Buffer , int Size) {
