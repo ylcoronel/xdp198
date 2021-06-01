@@ -43,6 +43,7 @@ int max (int a, int b);
 void badCharHeuristic( char *str, int size, int badchar[NO_OF_CHARS]);
 int tcp=0,udp=0,icmp=0,others=0,igmp=0,total=0;
 int flag = 0;
+int pktnum = 0;
 
 #include "../common/common_params.h"
 #include "../common/common_user_bpf_xdp.h"
@@ -70,7 +71,7 @@ struct stats_record {
 	uint64_t tx_packets;
 	uint64_t tx_bytes;
     // we can put bool type here if true, packet matched, if false, packet did not match
-    int match;
+    int match[64];
 };
 
 
@@ -297,8 +298,8 @@ static inline void csum_replace2(__sum16 *sum, __be16 old, __be16 new)
 static bool process_packet(struct xsk_socket_info *xsk,
 			   uint64_t addr, uint32_t len)
 {
-	uint8_t *pkt = xsk_umem__get_data(xsk->umem->buffer, addr); // data
-	uint64_t *data_end = xsk_umem__add_offset_to_addr(addr); // data_end
+	uint8_t *pkt = xsk_umem__get_data(xsk->umem->buffer, addr); // start of data
+	//int64_t *data_end = xsk_umem__add_offset_to_addr(addr); // data_end
     // start address of frame
     /* 
     static inline void *xsk_umem__get_data(void *umem_area, __u64 addr)
@@ -308,19 +309,20 @@ static bool process_packet(struct xsk_socket_info *xsk,
     */
 	struct ethhdr *eth = (struct ethhdr *) pkt;
 	total++;
-	if (( void *) eth + sizeof (* eth) <= ( void *)data_end ){
-		struct iphdr *ip = ( void *)pkt + sizeof (* eth);
-		if (( void *) ip + sizeof (* ip) <= ( void *)data_end ){
-			if (ip -> protocol == IPPROTO_UDP ) {
-				udp++;
-        		if(!(process_udp_packet(pkt , len)))
-            		xsk->stats.match = 0;
-			}else{
-				others++;
-            	xsk->stats.match = 1;
-			}
-		}
+
+	struct iphdr *ip = ( void *)pkt + sizeof (* eth);
+
+	if (ip -> protocol == IPPROTO_UDP ) {
+		udp++;
+        if(!(process_udp_packet(pkt, len)))
+            printf("No Pattern Found.\n");
+		else
+			printf("Pattern Found.\n");
+	}else{
+		others++;
+		printf("Not a UDP Packet.\n");
 	}
+	
     
 
         /* Lesson#3: Write an IPv6 ICMP ECHO parser to send responses
