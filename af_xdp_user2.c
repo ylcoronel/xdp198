@@ -22,14 +22,16 @@
 #include <linux/if_ether.h>
 #include <linux/ipv6.h>
 #include <linux/icmpv6.h>
+#include <linux/udp.h>
+#include <linux/ip.h>
 
 #include <stdio.h>       //For standard things
 #include <stdlib.h>      // malloc
 #include <string.h>      //memset                                                                                                                                        
 #include <netinet/ip_icmp.h>     //Provides declarations for icmp header
-#include<netinet/udp.h> //Provides declarations for udp header
+//#include<netinet/udp.h> //Provides declarations for udp header
 #include <netinet/tcp.h> //Provides declarations for tcp header
-#include <netinet/ip.h>  //Provides declarations for ip header
+//#include <netinet/ip.h>  //Provides declarations for ip header
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <net/if.h>
@@ -300,14 +302,18 @@ static bool process_packet(struct xsk_socket_info *xsk,
 			   uint64_t addr, uint32_t len)
 {
 	uint8_t *pkt = xsk_umem__get_data(xsk->umem->buffer, addr); // start of data
+	unsigned int payload_size;
+    unsigned char *payload;
+    struct udphdr *udp;
+    struct iphdr *ip;
 
-	struct ethhdr *eth = (struct ethhdr *) pkt;
+	//struct ethhdr *eth = (struct ethhdr *) pkt;
 	struct ethhdr *eth = pkt;
     ip = pkt + sizeof(*eth);
     udp = (void *)ip + sizeof(*ip);
 	payload = (unsigned char *)udp + sizeof(*udp);
     payload_size = ntohs(udp->len) - sizeof(*udp);
-	check_pattern(pkt, len);
+	check_pattern(payload, payload_size);
 	udp++;
 
 	if (flag == 0)
