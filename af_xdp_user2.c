@@ -43,7 +43,8 @@ int max (int a, int b);
 void badCharHeuristic( char *str, int size, int badchar[NO_OF_CHARS]);
 int tcp=0,udp=0,icmp=0,others=0,igmp=0,total=0;
 int flag = 0;
-int pktnum = 0;
+int pkt_count = 0;
+int pkt_dum = 0;
 
 #include "../common/common_params.h"
 #include "../common/common_user_bpf_xdp.h"
@@ -299,91 +300,22 @@ static bool process_packet(struct xsk_socket_info *xsk,
 			   uint64_t addr, uint32_t len)
 {
 	uint8_t *pkt = xsk_umem__get_data(xsk->umem->buffer, addr); // start of data
-	//int64_t *data_end = xsk_umem__add_offset_to_addr(addr); // data_end
-    // start address of frame
-    /* 
-    static inline void *xsk_umem__get_data(void *umem_area, __u64 addr)
-    {
-	    return &((char *)umem_area)[addr];
-    }
-    */
+
 	struct ethhdr *eth = (struct ethhdr *) pkt;
-	total++;
+	struct ethhdr *eth = pkt;
+    ip = pkt + sizeof(*eth);
+    udp = (void *)ip + sizeof(*ip);
+	payload = (unsigned char *)udp + sizeof(*udp);
+    payload_size = ntohs(udp->len) - sizeof(*udp);
+	check_pattern(pkt, len);
+	udp++;
 
-	struct iphdr *ip = ( void *)pkt + sizeof (* eth);
-
-	if (ip -> protocol == IPPROTO_UDP ) {
-		udp++;
-        if(!(process_udp_packet(pkt, len)))
-            printf("No Pattern Found.\n");
-		else
-			printf("Pattern Found.\n");
-	}else{
-		others++;
-		printf("Not a UDP Packet.\n");
-	}
+	if (flag == 0)
+        xsk->stats.match[pkt_dum] = 0; // pattern not found
+    else
+        xsk->stats.match[pkt_dum] = 1; // pattern found 
 	
-    
-
-        /* Lesson#3: Write an IPv6 ICMP ECHO parser to send responses
-	 *
-	 * Some assumptions to make it easier:
-	 * - No VLAN handling
-	 * - Only if nexthdr is ICMP
-	 * - Just return all data with MAC/IP swapped, and type set to
-	 *   ICMPV6_ECHO_REPLY
-	 * - Recalculate the icmp checksum */
-
-	if (false) {
-        // pattern matching
-		int ret;
-		uint32_t tx_idx = 0;
-		uint8_t tmp_mac[ETH_ALEN];
-		struct in6_addr tmp_ip;
-		struct ethhdr *eth = (struct ethhdr *) pkt;
-		struct ipv6hdr *ipv6 = (struct ipv6hdr *) (eth + 1);
-		struct icmp6hdr *icmp = (struct icmp6hdr *) (ipv6 + 1);
-
-		if (ntohs(eth->h_proto) != ETH_P_IPV6 ||
-		    len < (sizeof(*eth) + sizeof(*ipv6) + sizeof(*icmp)) ||
-		    ipv6->nexthdr != IPPROTO_ICMPV6 ||
-		    icmp->icmp6_type != ICMPV6_ECHO_REQUEST)
-			return false;
-
-		memcpy(tmp_mac, eth->h_dest, ETH_ALEN);
-		memcpy(eth->h_dest, eth->h_source, ETH_ALEN);
-		memcpy(eth->h_source, tmp_mac, ETH_ALEN);
-
-		memcpy(&tmp_ip, &ipv6->saddr, sizeof(tmp_ip));
-		memcpy(&ipv6->saddr, &ipv6->daddr, sizeof(tmp_ip));
-		memcpy(&ipv6->daddr, &tmp_ip, sizeof(tmp_ip));
-
-		icmp->icmp6_type = ICMPV6_ECHO_REPLY;
-
-		csum_replace2(&icmp->icmp6_cksum,
-			      htons(ICMPV6_ECHO_REQUEST << 8),
-			      htons(ICMPV6_ECHO_REPLY << 8));
-
-		/* Here we sent the packet out of the receive port. Note that
-		 * we allocate one entry and schedule it. Your design would be
-		 * faster if you do batch processing/transmission */
-
-		ret = xsk_ring_prod__reserve(&xsk->tx, 1, &tx_idx);
-		if (ret != 1) {
-			/* No more transmit slots, drop the packet */
-			return false;
-		}
-
-		xsk_ring_prod__tx_desc(&xsk->tx, tx_idx)->addr = addr;
-		xsk_ring_prod__tx_desc(&xsk->tx, tx_idx)->len = len;
-		xsk_ring_prod__submit(&xsk->tx, 1);
-		xsk->outstanding_tx++;
-
-		xsk->stats.tx_bytes += len;
-		xsk->stats.tx_packets++;
-		return true;
-	}
-
+	pkt_dum++;
 	return false;
 }
 
@@ -405,7 +337,7 @@ static bool process_packet(struct xsk_socket_info *xsk,
 }*/
  
  
-static bool process_udp_packet(unsigned char *Buffer , int Size) {
+/*static bool process_udp_packet(unsigned char *Buffer , int Size) {
     unsigned short iphdrlen;
 
     struct iphdr *iph = (struct iphdr *)Buffer;
@@ -422,7 +354,7 @@ static bool process_udp_packet(unsigned char *Buffer , int Size) {
         else
             return true; // pattern found 
     }                     
-}
+}*/
 
 void check_pattern(unsigned char *data, int Size) {
     char *pattern = NULL;
@@ -461,7 +393,7 @@ void check_pattern(unsigned char *data, int Size) {
         the above loop */
         if (j < 0)
         {
-            printf("\n pattern occurs at shift = %d", s);
+            //printf("\n pattern occurs at shift = %d", s);
             flag = 1;
             /* Shift the pattern so that the next
             character in text aligns with the last
@@ -510,6 +442,9 @@ static void handle_receive_packets(struct xsk_socket_info *xsk)
 	unsigned int rcvd, stock_frames, i;
 	uint32_t idx_rx = 0, idx_fq = 0;
 	int ret;
+
+	pkt_count = rcvd;
+	pkt_dum = 0;
 
 	rcvd = xsk_ring_cons__peek(&xsk->rx, RX_BATCH_SIZE, &idx_rx);
 	if (!rcvd)
@@ -635,11 +570,13 @@ static void stats_print(struct stats_record *stats_rec,
 	printf(fmt, "       TX:", stats_rec->tx_packets, pps,
 	       stats_rec->tx_bytes / 1000 , bps,
 	       period);
-
-    if(stats_rec->match == 0)
-        printf("No pattern found.");
-    else
-        printf("Pattern found.");
+	int i;
+	for(i=0; i < pkt_count; i++){
+    	if(stats_rec->match[i] == 0)
+        	printf("No pattern found.");
+    	else
+        	printf("Pattern found.");
+	}
 
 	printf("\n");
 
