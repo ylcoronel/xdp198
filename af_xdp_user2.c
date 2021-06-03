@@ -307,8 +307,8 @@ static bool process_packet(struct xsk_socket_info *xsk,
     struct udphdr *udp;
     struct iphdr *ip;
 
-	//struct ethhdr *eth = (struct ethhdr *) pkt;
-	struct ethhdr *eth = pkt;
+	struct ethhdr *eth = (struct ethhdr *) pkt;
+	//struct ethhdr *eth = pkt;
     ip = pkt + sizeof(*eth);
     udp = (void *)ip + sizeof(*ip);
 	payload = (unsigned char *)udp + sizeof(*udp);
@@ -324,43 +324,6 @@ static bool process_packet(struct xsk_socket_info *xsk,
 	pkt_dum++;
 	return false;
 }
-
-/*static bool ProcessPacket(unsigned char* buffer, int size) {
-    //Get the IP Header part of this packet
-    struct iphdr *iph = (struct iphdr*)buffer;
-    ++total;
-    switch (iph->protocol) { //Check the Protocol and do accordingly...
-        case 17: //UDP Protocol
-            if(!process_udp_packet(buffer , size))
-                return false; // pattern not found
-            else
-                return true; // pattern found   
- 
-        default: //Some Other Protocol like ARP etc.
-            ++others;
-            return false;
-    }
-}*/
- 
- 
-/*static bool process_udp_packet(unsigned char *Buffer , int Size) {
-    unsigned short iphdrlen;
-
-    struct iphdr *iph = (struct iphdr *)Buffer;
-    iphdrlen = iph->ihl*4;
- 
-    struct udphdr *udph = (struct udphdr *)(Buffer + iphdrlen);
- 
-    if(ntohs(udph->dest) != 5201)
-        return false;
-    else{
-        check_pattern(Buffer + iphdrlen + sizeof(udph) , ( Size - sizeof udph - iph->ihl * 4));
-        if (flag == 0)
-            return false; // pattern not found
-        else
-            return true; // pattern found 
-    }                     
-}*/
 
 void check_pattern(unsigned char *data, int Size) {
     char *pattern = NULL;
@@ -449,13 +412,13 @@ static void handle_receive_packets(struct xsk_socket_info *xsk)
 	uint32_t idx_rx = 0, idx_fq = 0;
 	int ret;
 
-	pkt_count = rcvd;
-	pkt_dum = 0;
-
 	rcvd = xsk_ring_cons__peek(&xsk->rx, RX_BATCH_SIZE, &idx_rx);
 	if (!rcvd)
 		return;
 
+	pkt_count = rcvd;
+	pkt_dum = 0;
+	
 	/* Stuff the ring with as much frames as possible */
 	stock_frames = xsk_prod_nb_free(&xsk->umem->fq,
 					xsk_umem_free_frames(xsk));
@@ -477,11 +440,14 @@ static void handle_receive_packets(struct xsk_socket_info *xsk)
 		xsk_ring_prod__submit(&xsk->umem->fq, stock_frames);
 	}
 
+	int dummy;
 	/* Process received packets */
 	for (i = 0; i < rcvd; i++) {
+		printf("This is packet number %d\n", dummy);
 		uint64_t addr = xsk_ring_cons__rx_desc(&xsk->rx, idx_rx)->addr;
 		uint32_t len = xsk_ring_cons__rx_desc(&xsk->rx, idx_rx++)->len;
 
+		dummy++;
 		if (!process_packet(xsk, addr, len))
 			xsk_free_umem_frame(xsk, addr);
 
@@ -576,6 +542,7 @@ static void stats_print(struct stats_record *stats_rec,
 	printf(fmt, "       TX:", stats_rec->tx_packets, pps,
 	       stats_rec->tx_bytes / 1000 , bps,
 	       period);
+		   
 	int i;
 	for(i=0; i < pkt_count; i++){
     	if(stats_rec->match[i] == 0)
@@ -721,7 +688,7 @@ int main(int argc, char **argv)
 
 	/* Receive and count packets than drop them */
     // where to put udp processing
-	rx_and_process(&cfg, xsk_socket);
+	rx_and_process(xsk_socket);
 
 	/* Cleanup */
 	xsk_socket__delete(xsk_socket->xsk);
