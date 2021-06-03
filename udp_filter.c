@@ -5,24 +5,29 @@
 #include <linux/udp.h>
 #include <stdio.h>
 #include <stdlib.h> 
+#include "libbpf/src/bpf_helpers.h"
+# define NO_OF_CHARS 256
 
 FILE *logfile;
 int udp=0;
 int flag = 0;
 
+void check_pattern(unsigned char *data, int Size);
+int max (int a, int b);
+void badCharHeuristic( char *str, int size, int badchar[NO_OF_CHARS]);
+
+SEC("xdp_sock")
 int xdp_func(struct xdp_md *ctx)
 {
     void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char match_pattern[] = "test";
+    //char match_pattern[] = "test";
     unsigned int payload_size, i;
     struct ethhdr *eth = data;
     unsigned char *payload;
     struct udphdr *udp;
     struct iphdr *ip;
 
-
-    struct ethhdr * eth = data;
     if (( void *) eth + sizeof (* eth) <= data_end ){
         struct iphdr *ip = data + sizeof (* eth);
         if (( void *) ip + sizeof (* ip) <= data_end ){
@@ -83,7 +88,6 @@ void check_pattern(unsigned char *data, int Size) {
         the above loop */
         if (j < 0)
         {
-            printf("\n pattern occurs at shift = %d", s);
             flag = 1;
             /* Shift the pattern so that the next
             character in text aligns with the last
