@@ -68,7 +68,7 @@ struct bpf_map_def SEC("maps") xdp_stats_map = {
 SEC("xdp_sock")
 int xdp_sock_prog(struct xdp_md *ctx)
 {
-    void *data_end = (void *)(long)ctx->data_end;
+    void *data_efnd = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
     struct ethhdr *eth = data;
 
