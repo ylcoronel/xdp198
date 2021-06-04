@@ -34,6 +34,12 @@
 #define RX_BATCH_SIZE      64
 #define INVALID_UMEM_FRAME UINT64_MAX
 
+# define NO_OF_CHARS 256
+static bool check_pattern(unsigned char *data, int Size);
+int max (int a, int b);
+void badCharHeuristic( char *str, int size, int badchar[NO_OF_CHARS]);
+
+// for the 2 rings required for af_xdp
 struct xsk_umem_info {
 	struct xsk_ring_prod fq;
 	struct xsk_ring_cons cq;
@@ -41,19 +47,25 @@ struct xsk_umem_info {
 	void *buffer;
 };
 
+// just stats to pring
 struct stats_record {
 	uint64_t timestamp;
 	uint64_t rx_packets;
 	uint64_t rx_bytes;
 	uint64_t tx_packets;
 	uint64_t tx_bytes;
+
+	int match;
+	int udp;
+	int rcvd;
 };
 
+
 struct xsk_socket_info {
-	struct xsk_ring_cons rx;
-	struct xsk_ring_prod tx;
-	struct xsk_umem_info *umem;
-	struct xsk_socket *xsk;
+	struct xsk_ring_cons rx; // rx ring
+	struct xsk_ring_prod tx; // tx ring
+	struct xsk_umem_info *umem; //allocated mem
+	struct xsk_socket *xsk; // af_xdp socket
 
 	uint64_t umem_frame_addr[NUM_FRAMES];
 	uint32_t umem_frame_free;
@@ -130,8 +142,7 @@ static struct xsk_umem_info *configure_xsk_umem(void *buffer, uint64_t size)
 	if (!umem)
 		return NULL;
 
-	ret = xsk_umem__create(&umem->umem, buffer, size, &umem->fq, &umem->cq,
-			       NULL);
+	ret = xsk_umem__create(&umem->umem, buffer, size, &umem->fq, &umem->cq, NULL);
 	if (ret) {
 		errno = -ret;
 		return NULL;
@@ -235,7 +246,7 @@ static void complete_tx(struct xsk_socket_info *xsk)
 	sendto(xsk_socket__fd(xsk->xsk), NULL, 0, MSG_DONTWAIT, NULL, 0);
 
 
-	/* Collect/free completed TX buffers */
+	// Collect/free completed TX buffers //
 	completed = xsk_ring_cons__peek(&xsk->umem->cq,
 					XSK_RING_CONS__DEFAULT_NUM_DESCS,
 					&idx_cq);
@@ -275,14 +286,8 @@ static bool process_packet(struct xsk_socket_info *xsk,
 {
 	uint8_t *pkt = xsk_umem__get_data(xsk->umem->buffer, addr);
 
-        /* Lesson#3: Write an IPv6 ICMP ECHO parser to send responses
-	 *
-	 * Some assumptions to make it easier:
-	 * - No VLAN handling
-	 * - Only if nexthdr is ICMP
-	 * - Just return all data with MAC/IP swapped, and type set to
-	 *   ICMPV6_ECHO_REPLY
-	 * - Recalculate the icmp checksum */
+	xsk->stats.udp++;
+	check_pattern(pkt, len, xsk);
 
 	if (false) {
 		int ret;
@@ -346,6 +351,8 @@ static void handle_receive_packets(struct xsk_socket_info *xsk)
 	if (!rcvd)
 		return;
 
+	xsk->stats.rcvd += rcvd;
+
 	/* Stuff the ring with as much frames as possible */
 	stock_frames = xsk_prod_nb_free(&xsk->umem->fq,
 					xsk_umem_free_frames(xsk));
@@ -381,7 +388,6 @@ static void handle_receive_packets(struct xsk_socket_info *xsk)
 	xsk_ring_cons__release(&xsk->rx, rcvd);
 	xsk->stats.rx_packets += rcvd;
 
-	/* Do we need to wake up the kernel for transmission */
 	complete_tx(xsk);
   }
 
@@ -467,6 +473,9 @@ static void stats_print(struct stats_record *stats_rec,
 	       stats_rec->tx_bytes / 1000 , bps,
 	       period);
 
+	printf(fmt, "udp packets: ", stats_rec->udp);
+	printf(fmt, "match packets: ", stats_rec->match);
+	printf(fmt, "rcvd packets: ", stats_rec->rcvd);
 	printf("\n");
 }
 
@@ -496,10 +505,106 @@ static void exit_application(int signal)
 	global_exit = true;
 }
 
+/////////////// PACKET PROCESSING FUNCTIONS ///////////////////
+
+static void check_pattern(unsigned char *data, int Size, struct xsk_socket_info *xsk) {
+    char *pattern = NULL;
+    FILE *fp;
+    fp = fopen("pats.txt", "r");
+    flag = 0;
+    size_t len = 0;
+    ssize_t read;
+	/*char patterns = {"FJDMFOEOLTUUWU", "HJGFUJKFMYLDCBOXVJTRTEGF", "CCFHT", "EGENLZRNEYILONYHKUOPGRGU",
+   					"XYGKLGPTNEGMVV", "UGCBCDYALKNRBGEFMSDJN", "FYHLXQHFUIHXIHI", "ZPIOKVVIDGHTONNYWMJGWE",
+   					"FFEVILXXVNHRIRUR", "SOUVLXARDXZPWYM"};
+	
+	char line [128];
+char file [10][128];
+plist = fopen("plist1.txt", "r");
+
+	while(fgets(line, sizeof line, plist) != NULL){
+file[i][0]= line;
+   i++;
+}*/
+
+    while ((read = getline(&pattern, &len, fp)) != -1) {
+    	int m = strlen(pattern);
+    	int n = Size;
+
+    	int badchar[NO_OF_CHARS];
+
+    	/* Fill the bad character array by calling
+        the preprocessing function badCharHeuristic()        
+        for given pattern */
+    	badCharHeuristic(pattern, m, badchar);
+
+    	int s = 0;  // s is shift of the pattern with
+                    
+    	// respect to text
+    	while(s <= (n - m))
+    	{
+        	int j = m-1;
+
+        	/* Keep reducing index j of pattern while
+        	characters of pattern and text are
+        	matching at this shift s */
+       		while(j >= 0 && pattern[j] == data[s+j])
+            	j--;
+
+        	/* If the pattern is present at current
+        	shift, then index j will become -1 after
+        	the above loop */
+        	if (j < 0)
+        	{
+            	//printf("\n pattern occurs at shift = %d", s);
+            	xsk->stats.match++;
+            	/* Shift the pattern so that the next
+            	character in text aligns with the last
+            	occurrence of it in pattern.
+            	The condition s+m < n is necessary for
+            	the case when pattern occurs at the end
+            	of text */
+            	s += (s+m < n)? m-badchar[data[s+m]] : 1;
+        	}                             
+        	else
+           		/* Shift the pattern so that the bad character
+            	in text aligns with the last occurrence of
+            	it in pattern. The max function is used to
+            	make sure that we get a positive shift.
+        		We may get a negative shift if the last
+        		occurrence  of bad character in pattern
+        		is on the right side of the current
+        		character. */
+        		s += max(1, j - badchar[data[s+j]]);
+		}
+	}
+}
+
+// A utility function to get maximum of two integers
+int max (int a, int b) { return (a > b)? a: b; }
+
+// The preprocessing function for Boyer Moore's
+// bad character heuristic
+void badCharHeuristic( char *str, int size, int badchar[NO_OF_CHARS])
+{
+    int i;
+
+    // Initialize all occurrences as -1
+    for (i = 0; i < NO_OF_CHARS; i++)
+        badchar[i] = -1;
+
+    // Fill the actual value of last occurrence
+    // of a character
+    for (i = 0; i < size; i++)
+        badchar[(int) str[i]] = i;
+}                                    
+
+
+////////////// END OF PACKET PROCESSING FUNCTIONS ///////////////////
 int main(int argc, char **argv)
 {
 	int ret;
-	int xsks_map_fd;
+	int xsks_map_fd; // map file descriptor
 	void *packet_buffer;
 	uint64_t packet_buffer_size;
 	struct rlimit rlim = {RLIM_INFINITY, RLIM_INFINITY};
@@ -512,7 +617,7 @@ int main(int argc, char **argv)
 	struct xsk_umem_info *umem;
 	struct xsk_socket_info *xsk_socket;
 	struct bpf_object *bpf_obj = NULL;
-	pthread_t stats_poll_thread;
+	pthread_t stats_poll_thread; // i dont think i need this
 
 	/* Global shutdown handler */
 	signal(SIGINT, exit_application);
@@ -532,6 +637,7 @@ int main(int argc, char **argv)
 		return xdp_link_detach(cfg.ifindex, cfg.xdp_flags, 0);
 
 	/* Load custom program if configured */
+    // loads xdp object in specified dev 
 	if (cfg.filename[0] != 0) {
 		struct bpf_map *map;
 
@@ -561,7 +667,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Allocate memory for NUM_FRAMES of the default XDP frame size */
-	packet_buffer_size = NUM_FRAMES * FRAME_SIZE;
+	packet_buffer_size = NUM_FRAMES * FRAME_SIZE; // 4096 * xdp default frame size
 	if (posix_memalign(&packet_buffer,
 			   getpagesize(), /* PAGE_SIZE aligned */
 			   packet_buffer_size)) {
@@ -587,6 +693,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Start thread to do statistics display */
+    // not needed 
 	if (verbose) {
 		ret = pthread_create(&stats_poll_thread, NULL, stats_poll,
 				     xsk_socket);
@@ -598,6 +705,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Receive and count packets than drop them */
+    // where to put udp processing
 	rx_and_process(&cfg, xsk_socket);
 
 	/* Cleanup */
