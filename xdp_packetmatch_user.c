@@ -33,8 +33,8 @@ static const char *__doc__ = "XDP loader and stats program\n"
 #include "common_kern_user.h"
 #include "bpf_util.h" /* bpf_num_possible_cpus */
 
-static const char *default_filename = "xdp_prog_kern.o";
-static const char *default_progsec = "xdp_stats1";
+static const char *default_filename = "xdp_packetmatch_kern.o";
+static const char *default_progsec = "xdp_prog";
 
 #define NUM_FRAMES         4096
 #define FRAME_SIZE         XSK_UMEM__DEFAULT_FRAME_SIZE
@@ -694,7 +694,9 @@ int main(int argc, char **argv)
 
 	//stats_poll(stats_map_fd, info.type, interval, &cfg, xsk_socket);
     /* Receive and count packets than drop them */
-	rx_and_process(stats_map_fd, info.type, interval, xsk_socket);
+    while(1){
+	    rx_and_process(stats_map_fd, info.type, interval, xsk_socket);
+    }
 
     /* Cleanup */
 	xsk_socket__delete(xsk_socket->xsk);

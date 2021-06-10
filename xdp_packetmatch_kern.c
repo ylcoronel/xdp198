@@ -28,8 +28,8 @@ struct bpf_map_def SEC("maps") xdp_stats_map = {
 #define lock_xadd(ptr, val)	((void) __sync_fetch_and_add(ptr, val))
 #endif
 
-SEC("xdp_stats1")
-int  xdp_stats1_func(struct xdp_md *ctx)
+SEC("xdp_prog")
+int xdp_prog_func(struct xdp_md *ctx)
 {
 	void *data_end = (void *)(long)ctx->data_end;
 	void *data     = (void *)(long)ctx->data;
