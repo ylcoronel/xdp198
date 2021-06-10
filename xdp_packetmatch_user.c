@@ -14,6 +14,8 @@ static const char *__doc__ = "XDP loader and stats program\n"
 #include <unistd.h>
 #include <time.h>
 
+#include <sys/resource.h>
+
 #include <bpf/bpf.h>
 #include <bpf/xsk.h>
 #include <bpf/libbpf.h>
@@ -21,6 +23,7 @@ static const char *__doc__ = "XDP loader and stats program\n"
 #include <arpa/inet.h>
 #include <linux/if_ether.h>
 #include <linux/ipv6.h>
+#include <netinet/ip.h>
 #include <linux/icmpv6.h>
 #include <net/if.h>
 #include <linux/if_link.h> /* depend on kernel-headers installed */
@@ -40,7 +43,7 @@ static const char *default_progsec = "xdp_stats1";
 #define MAXPATLEN 27 // 25 chars + '\n' + '\0'
 #define MAXNUMPATS 10
 
-unsigned char *pat[MAXNUMPATS];
+char *pat[MAXNUMPATS];
 int pat_len[MAXNUMPATS];
 int* pps[MAXNUMPATS];
 
@@ -421,7 +424,6 @@ void check_pattern(unsigned char *text, int N, unsigned char *pattern, int M, in
         }
         if (j == M) {
             printf("pattern found\n");
-            flag = 1;
             j = pps[j - 1];
         }
         else if (i < N && pattern[j] != text[i]) {
@@ -557,8 +559,6 @@ int main(int argc, char **argv)
 	struct rlimit rlim = {RLIM_INFINITY, RLIM_INFINITY};
     struct xsk_umem_info *umem;
 	struct xsk_socket_info *xsk_socket;
-    pthread_t stats_poll_thread;
-
 
 	struct config cfg = {
 		.xdp_flags = XDP_FLAGS_UPDATE_IF_NOEXIST | XDP_FLAGS_DRV_MODE,
@@ -566,8 +566,6 @@ int main(int argc, char **argv)
 		.do_unload = false,
 	};
 
-    /* Global shutdown handler */
-	signal(SIGINT, exit_application);
 
 	/* Set default BPF-ELF object file and BPF program name */
 	strncpy(cfg.filename, default_filename, sizeof(cfg.filename));
