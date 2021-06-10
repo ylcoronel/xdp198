@@ -1,19 +1,27 @@
 static const char *__doc__ = "XDP loader and stats program\n"
 	" - Allows selecting BPF section --progsec name to XDP-attach to --dev\n";
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
-
+#include <poll.h>
+#include <pthread.h>
+#include <signal.h>
 #include <locale.h>
 #include <unistd.h>
 #include <time.h>
 
 #include <bpf/bpf.h>
+#include <bpf/xsk.h>
 #include <bpf/libbpf.h>
 
+#include <arpa/inet.h>
+#include <linux/if_ether.h>
+#include <linux/ipv6.h>
+#include <linux/icmpv6.h>
 #include <net/if.h>
 #include <linux/if_link.h> /* depend on kernel-headers installed */
 
@@ -53,9 +61,6 @@ struct xsk_socket_info {
 	uint32_t umem_frame_free;
 
 	uint32_t outstanding_tx;
-
-	struct stats_record stats;
-	struct stats_record prev_stats;
 };
 
 static inline __u32 xsk_ring_prod__free(struct xsk_ring_prod *r)
@@ -456,11 +461,11 @@ void process_packet(struct xsk_socket_info *xsk,
     struct iphdr *iph = (struct iphdr*)pkt;
     unsigned short iphdrlen;
     iphdrlen = iph->ihl*4;
-    struct udphdr *udph = (struct udphdr*)(buffer + iphdrlen);
+    struct udphdr *udph = (struct udphdr*)(pkt + iphdrlen);
     int i; 
 
     for (i = 0; i < MAXNUMPATS; i++) {
-        check_pattern(buffer + iphdrlen + sizeof udph, ( data_size - sizeof udph - iph->ihl * 4 ),
+        check_pattern(pkt + iphdrlen + sizeof udph, ( len - sizeof udph - iph->ihl * 4 ),
         pat[i], pat_len[i], pps[i]);
     }
 
