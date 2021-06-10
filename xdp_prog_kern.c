@@ -12,6 +12,7 @@
 
 #define MAXNUMPATS 10
 #define MAXPATLEN 27
+int match;
 
 struct bpf_map_def SEC("maps") xdp_stats_map = {
 	.type        = BPF_MAP_TYPE_ARRAY,
@@ -26,9 +27,9 @@ struct bpf_map_def SEC("maps") xdp_stats_map = {
 #endif
 
 static __always_inline
-static bool check_pattern(unsigned char *text, int N, unsigned char *pattern, int M, int pps[]) {
+void check_pattern(unsigned char *text, int N, unsigned char *pattern, int M, int pps[]) {
     if (N < M) // if text_len < pat_len
-        return false;
+        return;
 
     int i = 0;
     int j = 0;
@@ -38,7 +39,7 @@ static bool check_pattern(unsigned char *text, int N, unsigned char *pattern, in
             i++;
         }
         if (j == M) {
-            return true;
+            match++;
             j = pps[j - 1];
         }
         else if (i < N && pattern[j] != text[i]) {
@@ -48,7 +49,7 @@ static bool check_pattern(unsigned char *text, int N, unsigned char *pattern, in
               i = i + 1;
         }
     }
-    return false;
+    return;
 }
 
 static __always_inline
@@ -95,11 +96,10 @@ int  xdp_prog_func(struct xdp_md *ctx)
     unsigned char *pat[MAXNUMPATS];
     int pat_len[MAXNUMPATS];
     int* pps[MAXNUMPATS];
-    unsigned int payload_size, i;
+    unsigned int payload_size;
     struct ethhdr *eth = data;
     unsigned char *payload;
     struct udphdr *udp;
-    struct iphdr *ip;
 
     for (i = 0; i < MAXNUMPATS; i++) {
         read = getline(&pat_, &len_, fp);
@@ -122,7 +122,7 @@ int  xdp_prog_func(struct xdp_md *ctx)
         if ((void*)ip + sizeof(*ip) <= data_end) {
             if (ip->protocol == IPPROTO_UDP) {
                 for (i = 0; i < MAXNUMPATS; i++) {
-                    if(!(check_pattern(payload_size, payload, pat[i], pat_len[i], pps[i])))
+                    if(match == 0)
                         lock_xadd(&rec->rx_packets, 1);
                 }
             }
