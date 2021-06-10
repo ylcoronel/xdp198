@@ -267,6 +267,7 @@ struct record {
 
 struct stats_record {
 	struct record stats[1]; /* Assignment#2: Hint */
+    int match;
 };
 
 static double calc_period(struct record *r, struct record *p)
@@ -306,6 +307,7 @@ static void stats_print(struct stats_record *stats_rec,
 		pps     = packets / period;
 
 		printf(fmt, action, rec->total.rx_packets, pps, period);
+        printf("Packets matched: %d\n", &stats_rec->match);
 	}
 }
 
@@ -411,7 +413,7 @@ static int __check_map_fd_info(int map_fd, struct bpf_map_info *info,
 	return 0;
 }
 
-void check_pattern(unsigned char *text, int N, unsigned char *pattern, int M, int pps[]) {
+void check_pattern(unsigned char *text, int N, unsigned char *pattern, int M, int pps[], int match) {
     if (N < M) // if text_len < pat_len
         return;
 
@@ -423,7 +425,7 @@ void check_pattern(unsigned char *text, int N, unsigned char *pattern, int M, in
             i++;
         }
         if (j == M) {
-            printf("pattern found\n");
+            match++;
             j = pps[j - 1];
         }
         else if (i < N && pattern[j] != text[i]) {
@@ -456,7 +458,7 @@ void prefixSuffixArray(unsigned char* pat, int M, int* pps) {
 }               
 
 void process_packet(struct xsk_socket_info *xsk,
-			   uint64_t addr, uint32_t len)
+			   uint64_t addr, uint32_t len, int match)
 {
 	uint8_t *pkt = xsk_umem__get_data(xsk->umem->buffer, addr);
 
@@ -467,15 +469,14 @@ void process_packet(struct xsk_socket_info *xsk,
     int i; 
 
     for (i = 0; i < MAXNUMPATS; i++) {
-        check_pattern(pkt + iphdrlen + sizeof udph, ( len - sizeof udph - iph->ihl * 4 ),
-        pat[i], pat_len[i], pps[i]);
+        check_pattern(pkt, len, pat[i], pat_len[i], pps[i], match);
     }
 
 	return;
 }
 
 
-void handle_receive_packets(struct xsk_socket_info *xsk)
+void handle_receive_packets(struct xsk_socket_info *xsk, struct stats_record *stats_rec)
 {
 	unsigned int rcvd, stock_frames, i;
 	uint32_t idx_rx = 0, idx_fq = 0;
@@ -511,7 +512,7 @@ void handle_receive_packets(struct xsk_socket_info *xsk)
 		uint64_t addr = xsk_ring_cons__rx_desc(&xsk->rx, idx_rx)->addr;
 		uint32_t len = xsk_ring_cons__rx_desc(&xsk->rx, idx_rx++)->len;
 
-		process_packet(xsk, addr, len);
+		process_packet(xsk, addr, len, &stats_rec->match);
 		xsk_free_umem_frame(xsk, addr);
 	}
 
@@ -539,7 +540,7 @@ void rx_and_process(int map_fd, __u32 map_type, int interval, struct xsk_socket_
 		prev = record; /* struct copy */
 		stats_collect(map_fd, map_type, &record);
 		stats_print(&record, &prev);
-		handle_receive_packets(xsk_socket);
+		handle_receive_packets(xsk_socket, &record);
 	}
 }
 
