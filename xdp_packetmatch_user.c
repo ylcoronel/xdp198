@@ -43,7 +43,7 @@ static const char *default_progsec = "xdp_stats1";
 #define MAXPATLEN 27 // 25 chars + '\n' + '\0'
 #define MAXNUMPATS 10
 
-char *pat[MAXNUMPATS];
+unsigned char *pat[MAXNUMPATS];
 int pat_len[MAXNUMPATS];
 int* pps[MAXNUMPATS];
 
@@ -435,7 +435,7 @@ void check_pattern(unsigned char *text, int N, unsigned char *pattern, int M, in
     }
 }
 
-void prefixSuffixArray(char* pat, int M, int* pps) {
+void prefixSuffixArray(unsigned char* pat, int M, int* pps) {
     int length = 0;
     pps[0] = 0;
     int i = 1;

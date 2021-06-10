@@ -35,7 +35,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	void *data     = (void *)(long)ctx->data;
 	struct datarec *rec;
 	__u32 key = XDP_PASS; /* XDP_PASS = 2 */
-    int index = ctx->rx_queue_index
+    int index = ctx->rx_queue_index;
 
 	/* Lookup in kernel BPF-side return pointer to actual data record */
 	rec = bpf_map_lookup_elem(&xdp_stats_map, &key);
