@@ -87,8 +87,6 @@ int  xdp_prog_func(struct xdp_md *ctx)
 	if (!rec)
 		return XDP_ABORTED;
 
-    FILE *fp;
-    fp = fopen("pats.txt", "r");
     char *pat_ = NULL;
     size_t len_ = 0;
     ssize_t read;
@@ -100,15 +98,12 @@ int  xdp_prog_func(struct xdp_md *ctx)
     struct ethhdr *eth = data;
     unsigned char *payload;
     struct udphdr *udp;
+    char pat[10][27] = {"FJDMFOEOLTUUWU", "CCFHT", "EGENLZRNEYILONYHKUOPGRGU", "XYGKLGPTNEGMVV",
+                        "UGCBCDYALKNRBGEFMSDJN", "FYHLXQHFUIHXIHI", "ZPIOKVVIDGHTONNYWMJGWE",
+                        "FFEVILXXVNHRIRUR", "SOUVLXARDXZPWYM"};
 
     for (i = 0; i < MAXNUMPATS; i++) {
-        read = getline(&pat_, &len_, fp);
-        pat_len[i] = strlen(pat_);
-        pat[i] = (unsigned char *)malloc(MAXPATLEN);
-        memset(pat[i], 0, MAXPATLEN);
-        for (j = 0; j < pat_len[i]; j++) {
-            pat[i][j] = pat_[j];
-        }
+        pat_len[i] = strlen(pattern[i]);
         pps[i] = (int *)malloc(MAXPATLEN * sizeof(int));
         prefixSuffixArray(pat[i], pat_len[i], pps[i]);
     }
