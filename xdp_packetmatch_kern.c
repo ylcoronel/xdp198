@@ -1,12 +1,19 @@
 #include <linux/bpf.h>
-#include <bpf/bpf_helpers.h>                                                              
-#include <linux/bpf.h>
+#include <bpf/bpf_helpers.h>
+#include <arpa/inet.h>
 #include <linux/if_ether.h>
 #include <linux/ip.h>
-#include <linux/in.h>
 #include <linux/udp.h>
 
 #include "common_kern_user.h" /* defines: struct datarec; */
+
+// map for packet count
+struct bpf_map_def SEC("maps") xdp_stats_map = {
+	.type        = BPF_MAP_TYPE_ARRAY,
+	.key_size    = sizeof(__u32),
+	.value_size  = sizeof(struct datarec),
+	.max_entries = XDP_ACTION_MAX,
+};
 
 // map for the af_xdp socket
 struct bpf_map_def SEC("maps") xsks_map = {
@@ -28,8 +35,8 @@ struct bpf_map_def SEC("maps") xdp_stats_map = {
 #define lock_xadd(ptr, val)	((void) __sync_fetch_and_add(ptr, val))
 #endif
 
-SEC("xdp_prog")
-int xdp_prog_func(struct xdp_md *ctx)
+SEC("xdp_sock")
+int xdp_sock_prog(struct xdp_md *ctx)
 {
 	void *data_end = (void *)(long)ctx->data_end;
 	void *data     = (void *)(long)ctx->data;
