@@ -466,7 +466,6 @@ static void stats_poll(struct xsk_socket_info *xsk)
 		stats_print(&xsk->stats, &previous_stats);
 		previous_stats = xsk->stats;
 	}
-	return NULL;
 }
 
 static void rx_and_process(struct config *cfg,
@@ -498,7 +497,6 @@ static void exit_application(int signal)
 
 int main(int argc, char **argv)
 {
-	int ret;
 	int xsks_map_fd;
 	void *packet_buffer;
 	uint64_t packet_buffer_size;
@@ -512,7 +510,6 @@ int main(int argc, char **argv)
 	struct xsk_umem_info *umem;
 	struct xsk_socket_info *xsk_socket;
 	struct bpf_object *bpf_obj = NULL;
-	pthread_t stats_poll_thread;
 
 	/* Global shutdown handler */
 	signal(SIGINT, exit_application);
