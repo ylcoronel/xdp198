@@ -385,6 +385,26 @@ static void handle_receive_packets(struct xsk_socket_info *xsk)
 	complete_tx(xsk);
   }
 
+static void rx_and_process(struct config *cfg,
+			   struct xsk_socket_info *xsk_socket)
+{
+	struct pollfd fds[2];
+	int ret, nfds = 1;
+
+	memset(fds, 0, sizeof(fds));
+	fds[0].fd = xsk_socket__fd(xsk_socket->xsk);
+	fds[0].events = POLLIN;
+
+	while(!global_exit) {
+		if (cfg->xsk_poll_mode) {
+			ret = poll(fds, nfds, -1);
+			if (ret <= 0 || ret > 1)
+				continue;
+		}
+		handle_receive_packets(xsk_socket);
+	}
+}
+
 #define NANOSEC_PER_SEC 1000000000 /* 10^9 */
 static uint64_t gettime(void)
 {
@@ -450,9 +470,10 @@ static void stats_print(struct stats_record *stats_rec,
 	printf("\n");
 }
 
-static void stats_poll(struct xsk_socket_info *xsk)
+static void *stats_poll(void *arg)
 {
 	unsigned int interval = 2;
+	struct xsk_socket_info *xsk = arg;
 	static struct stats_record previous_stats = { 0 };
 
 	previous_stats.timestamp = gettime();
@@ -466,27 +487,7 @@ static void stats_poll(struct xsk_socket_info *xsk)
 		stats_print(&xsk->stats, &previous_stats);
 		previous_stats = xsk->stats;
 	}
-}
-
-static void rx_and_process(struct config *cfg,
-			   struct xsk_socket_info *xsk_socket)
-{
-	struct pollfd fds[2];
-	int ret, nfds = 1;
-
-	memset(fds, 0, sizeof(fds));
-	fds[0].fd = xsk_socket__fd(xsk_socket->xsk);
-	fds[0].events = POLLIN;
-
-	while(!global_exit) {
-		if (cfg->xsk_poll_mode) {
-			ret = poll(fds, nfds, -1);
-			if (ret <= 0 || ret > 1)
-				continue;
-		}
-		handle_receive_packets(xsk_socket);
-		stats_poll(xsk_socket);
-	}
+	return NULL;
 }
 
 static void exit_application(int signal)
@@ -497,6 +498,7 @@ static void exit_application(int signal)
 
 int main(int argc, char **argv)
 {
+	int ret;
 	int xsks_map_fd;
 	void *packet_buffer;
 	uint64_t packet_buffer_size;
@@ -510,6 +512,7 @@ int main(int argc, char **argv)
 	struct xsk_umem_info *umem;
 	struct xsk_socket_info *xsk_socket;
 	struct bpf_object *bpf_obj = NULL;
+	pthread_t stats_poll_thread;
 
 	/* Global shutdown handler */
 	signal(SIGINT, exit_application);
@@ -581,6 +584,17 @@ int main(int argc, char **argv)
 		fprintf(stderr, "ERROR: Can't setup AF_XDP socket \"%s\"\n",
 			strerror(errno));
 		exit(EXIT_FAILURE);
+	}
+
+	/* Start thread to do statistics display */
+	if (verbose) {
+		ret = pthread_create(&stats_poll_thread, NULL, stats_poll,
+				     xsk_socket);
+		if (ret) {
+			fprintf(stderr, "ERROR: Failed creating statistics thread "
+				"\"%s\"\n", strerror(errno));
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	/* Receive and count packets than drop them */
