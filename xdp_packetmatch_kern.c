@@ -23,13 +23,6 @@ struct bpf_map_def SEC("maps") xsks_map = {
 	.max_entries = 64,  /* Assume netdev has no more than 64 queues */
 };
 
-struct bpf_map_def SEC("maps") xdp_stats_map = {
-	.type        = BPF_MAP_TYPE_ARRAY,
-	.key_size    = sizeof(__u32),
-	.value_size  = sizeof(struct datarec),
-	.max_entries = XDP_ACTION_MAX,
-};
-
 
 #ifndef lock_xadd
 #define lock_xadd(ptr, val)	((void) __sync_fetch_and_add(ptr, val))
