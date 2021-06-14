@@ -42,6 +42,7 @@ struct xsk_umem_info {
 };
 
 struct record { // packets that arrive in the XDP driver
+	__u64 timestamp;
 	struct datarec total; /* defined in common_kern_user.h */
 };
 
@@ -425,6 +426,8 @@ static void stats_poll(int map_fd, __u32 map_type, struct xsk_socket_info *xsk)
 	struct stats_record_driver prev, record = { 0 }; // for driver stats
 	static struct stats_record previous_stats = { 0 }; // for socket stats
 
+	int interval = 2; 
+
 	/* Trick to pretty printf with thousands separators use %' */
 	setlocale(LC_NUMERIC, "en_US");
 
@@ -638,7 +641,6 @@ static int __check_map_fd_info(int map_fd, struct bpf_map_info *info,
 
 int main(int argc, char **argv)
 {
-	int ret;
 	int xsks_map_fd;
 	void *packet_buffer;
 	uint64_t packet_buffer_size;
@@ -652,10 +654,8 @@ int main(int argc, char **argv)
 	struct xsk_umem_info *umem;
 	struct xsk_socket_info *xsk_socket;
 	struct bpf_object *bpf_obj = NULL;
-	pthread_t stats_poll_thread;
 	struct bpf_map_info map_expect = { 0 };
 	struct bpf_map_info info = { 0 };
-	struct bpf_object *bpf_obj;
 	int stats_map_fd;
 	int err;
 
