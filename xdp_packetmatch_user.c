@@ -23,7 +23,7 @@
 #include <linux/ipv6.h>
 #include <linux/icmpv6.h>
 
-#include "common_kern_user.h"
+
 #include "../common/common_params.h"
 #include "../common/common_user_bpf_xdp.h"
 #include "../common/common_libbpf.h"
@@ -41,18 +41,9 @@ struct xsk_umem_info {
 	void *buffer;
 };
 
-struct record { // packets that arrive in the XDP driver
-	__u64 timestamp;
-	struct datarec total; /* defined in common_kern_user.h */
-};
-
-struct stats_record_driver {
-	struct record stats[1]; /* Assignment#2: Hint */
-};
-
 struct stats_record {
 	uint64_t timestamp;
-	uint64_t rx_packets; // packets that arrive in the AF_XDP socket
+	uint64_t rx_packets;
 	uint64_t rx_bytes;
 	uint64_t tx_packets;
 	uint64_t tx_bytes;
@@ -279,185 +270,19 @@ static inline void csum_replace2(__sum16 *sum, __be16 old, __be16 new)
 	*sum = ~csum16_add(csum16_sub(~(*sum), old), new);
 }
 
-#define NANOSEC_PER_SEC 1000000000 /* 10^9 */
-static uint64_t gettime(void)
-{
-	struct timespec t;
-	int res;
-
-	res = clock_gettime(CLOCK_MONOTONIC, &t);
-	if (res < 0) {
-		fprintf(stderr, "Error with gettimeofday! (%i)\n", res);
-		exit(EXIT_FAIL);
-	}
-	return (uint64_t) t.tv_sec * NANOSEC_PER_SEC + t.tv_nsec;
-}
-
-static double calc_period(struct stats_record *r, struct stats_record *p)
-{
-	double period_ = 0;
-	__u64 period = 0;
-
-	period = r->timestamp - p->timestamp;
-	if (period > 0)
-		period_ = ((double) period / NANOSEC_PER_SEC);
-
-	return period_;
-}
-
-int find_map_fd(struct bpf_object *bpf_obj, const char *mapname)
-{
-	struct bpf_map *map;
-	int map_fd = -1;
-
-	/* Lesson#3: bpf_object to bpf_map */
-	map = bpf_object__find_map_by_name(bpf_obj, mapname);
-        if (!map) {
-		fprintf(stderr, "ERR: cannot find map by name: %s\n", mapname);
-		goto out;
-	}
-
-	map_fd = bpf_map__fd(map);
- out:
-	return map_fd;
-}
-
-static void stats_print(struct stats_record_driver *stats_rec_driver,
-			struct stats_record_driver *stats_prev_driver, struct stats_record *stats_rec,
-			struct stats_record *stats_prev)
-{
-	struct record *rec, *prev;
-	uint64_t packets_socket, bytes;
-	double period;
-	__u64 packets_driver;
-	double pps_driver; /* packets per sec */
-	double pps_socket; /* packets per sec */
-	double bps; /* bits per sec */
-
-	/* Assignment#2: Print other XDP actions stats  */
-	{
-		char *fmt_driver = "%-12s %'11lld pkts (%'10.0f pps)"
-			//" %'11lld Kbytes (%'6.0f Mbits/s)"
-			" period:%f\n";
-
-		char *fmt_socket = "%-12s %'11lld pkts (%'10.0f pps)"
-		" %'11lld Kbytes (%'6.0f Mbits/s)"
-		" period:%f\n";
-
-		const char *action = action2str(XDP_PASS);
-		rec  = &stats_rec_driver->stats[0];
-		prev = &stats_prev_driver->stats[0];
-
-		period = calc_period(stats_rec, stats_prev);
-		if (period == 0)
-		       return;
-
-		packets_driver = rec->total.rx_packets - prev->total.rx_packets;
-		pps_driver     = packets_driver / period;
-
-		packets_socket = stats_rec->rx_packets - stats_prev->rx_packets;
-		pps_socket     = packets_socket / period;
-
-		bytes   = stats_rec->rx_bytes   - stats_prev->rx_bytes;
-		bps     = (bytes * 8) / period / 1000000;
-
-		printf(fmt_driver, action, rec->total.rx_packets, pps_driver, period);
-
-		printf(fmt_socket, "AF_XDP RX:", stats_rec->rx_packets, pps_socket,
-	       stats_rec->rx_bytes / 1000 , bps,
-	       period);
-	}
-}
-
-void map_get_value_array(int fd, __u32 key, struct datarec *value)
-{
-	if ((bpf_map_lookup_elem(fd, &key, value)) != 0) {
-		fprintf(stderr,
-			"ERR: bpf_map_lookup_elem failed key:0x%X\n", key);
-	}
-}
-
-/* BPF_MAP_TYPE_PERCPU_ARRAY */
-void map_get_value_percpu_array(int fd, __u32 key, struct datarec *value)
-{
-	/* For percpu maps, userspace gets a value per possible CPU */
-	// unsigned int nr_cpus = bpf_num_possible_cpus();
-	// struct datarec values[nr_cpus];
-
-	fprintf(stderr, "ERR: %s() not impl. see assignment#3", __func__);
-}
-
-static bool map_collect(int fd, __u32 map_type, __u32 key, struct record *rec)
-{
-	struct datarec value;
-
-	/* Get time as close as possible to reading map contents */
-	rec->timestamp = gettime();
-
-	switch (map_type) {
-	case BPF_MAP_TYPE_ARRAY:
-		map_get_value_array(fd, key, &value);
-		break;
-	case BPF_MAP_TYPE_PERCPU_ARRAY:
-		/* fall-through */
-	default:
-		fprintf(stderr, "ERR: Unknown map_type(%u) cannot handle\n",
-			map_type);
-		return false;
-		break;
-	}
-
-	/* Assignment#1: Add byte counters */
-	rec->total.rx_packets = value.rx_packets;
-	return true;
-}
-
-static void stats_collect(int map_fd, __u32 map_type,
-			  struct stats_record_driver *stats_rec)
-{
-	/* Assignment#2: Collect other XDP actions stats  */
-	__u32 key = XDP_PASS;
-
-	map_collect(map_fd, map_type, key, &stats_rec->stats[0]);
-}
-
-static void stats_poll(int map_fd, __u32 map_type, struct xsk_socket_info *xsk)
-{
-	struct stats_record_driver prev, record = { 0 }; // for driver stats
-	static struct stats_record previous_stats = { 0 }; // for socket stats
-
-	int interval = 2; 
-
-	/* Trick to pretty printf with thousands separators use %' */
-	setlocale(LC_NUMERIC, "en_US");
-
-	/* Print stats "header" */
-	if (verbose) {
-		printf("\n");
-		printf("%-12s\n", "XDP-action");
-	}
-
-	/* Get initial reading quickly */
-	stats_collect(map_fd, map_type, &record);
-	usleep(1000000/4);
-
-	while (1) {
-		prev = record; /* struct copy */
-		stats_collect(map_fd, map_type, &record);
-
-		stats_print(&record, &prev, &xsk->stats, &previous_stats);
-
-		previous_stats = xsk->stats;
-
-		sleep(interval);
-	}
-
-}
-
 static bool process_packet(struct xsk_socket_info *xsk,
 			   uint64_t addr, uint32_t len)
 {
 	uint8_t *pkt = xsk_umem__get_data(xsk->umem->buffer, addr);
+
+        /* Lesson#3: Write an IPv6 ICMP ECHO parser to send responses
+	 *
+	 * Some assumptions to make it easier:
+	 * - No VLAN handling
+	 * - Only if nexthdr is ICMP
+	 * - Just return all data with MAC/IP swapped, and type set to
+	 *   ICMPV6_ECHO_REPLY
+	 * - Recalculate the icmp checksum */
 
 	if (false) {
 		int ret;
@@ -511,7 +336,7 @@ static bool process_packet(struct xsk_socket_info *xsk,
 	return false;
 }
 
-static void handle_receive_packets(struct xsk_socket_info *xsk, int map_fd, __u32 map_type)
+static void handle_receive_packets(struct xsk_socket_info *xsk)
 {
 	unsigned int rcvd, stock_frames, i;
 	uint32_t idx_rx = 0, idx_fq = 0;
@@ -544,29 +369,108 @@ static void handle_receive_packets(struct xsk_socket_info *xsk, int map_fd, __u3
 
 	/* Process received packets */
 	for (i = 0; i < rcvd; i++) {
-		uint64_t addr = xsk_ring_cons__rx_desc(&xsk->rx, idx_rx)->addr; // addr of packets including headers
-		uint32_t len = xsk_ring_cons__rx_desc(&xsk->rx, idx_rx++)->len; // len of packets including headers
+		uint64_t addr = xsk_ring_cons__rx_desc(&xsk->rx, idx_rx)->addr;
+		uint32_t len = xsk_ring_cons__rx_desc(&xsk->rx, idx_rx++)->len;
 
-		if (!process_packet(xsk, addr, len)) // when done, process_packet returns false
+		if (!process_packet(xsk, addr, len))
 			xsk_free_umem_frame(xsk, addr);
 
 		xsk->stats.rx_bytes += len;
 	}
 
+	xsk_ring_cons__release(&xsk->rx, rcvd);
 	xsk->stats.rx_packets += rcvd;
-	stats_poll(map_fd, map_type, xsk); // after processing print stats ( received packets in driver and received packets in socket )
-
-	xsk_ring_cons__release(&xsk->rx, rcvd); // release packets in frame to get new ones
 
 	/* Do we need to wake up the kernel for transmission */
 	complete_tx(xsk);
   }
 
-// sets af_xdp socket to poll mode
-// proceeds to handle receive packets function and stays there until exit
+#define NANOSEC_PER_SEC 1000000000 /* 10^9 */
+static uint64_t gettime(void)
+{
+	struct timespec t;
+	int res;
+
+	res = clock_gettime(CLOCK_MONOTONIC, &t);
+	if (res < 0) {
+		fprintf(stderr, "Error with gettimeofday! (%i)\n", res);
+		exit(EXIT_FAIL);
+	}
+	return (uint64_t) t.tv_sec * NANOSEC_PER_SEC + t.tv_nsec;
+}
+
+static double calc_period(struct stats_record *r, struct stats_record *p)
+{
+	double period_ = 0;
+	__u64 period = 0;
+
+	period = r->timestamp - p->timestamp;
+	if (period > 0)
+		period_ = ((double) period / NANOSEC_PER_SEC);
+
+	return period_;
+}
+
+static void stats_print(struct stats_record *stats_rec,
+			struct stats_record *stats_prev)
+{
+	uint64_t packets, bytes;
+	double period;
+	double pps; /* packets per sec */
+	double bps; /* bits per sec */
+
+	char *fmt = "%-12s %'11lld pkts (%'10.0f pps)"
+		" %'11lld Kbytes (%'6.0f Mbits/s)"
+		" period:%f\n";
+
+	period = calc_period(stats_rec, stats_prev);
+	if (period == 0)
+		period = 1;
+
+	packets = stats_rec->rx_packets - stats_prev->rx_packets;
+	pps     = packets / period;
+
+	bytes   = stats_rec->rx_bytes   - stats_prev->rx_bytes;
+	bps     = (bytes * 8) / period / 1000000;
+
+	printf(fmt, "AF_XDP RX:", stats_rec->rx_packets, pps,
+	       stats_rec->rx_bytes / 1000 , bps,
+	       period);
+
+	packets = stats_rec->tx_packets - stats_prev->tx_packets;
+	pps     = packets / period;
+
+	bytes   = stats_rec->tx_bytes   - stats_prev->tx_bytes;
+	bps     = (bytes * 8) / period / 1000000;
+
+	printf(fmt, "       TX:", stats_rec->tx_packets, pps,
+	       stats_rec->tx_bytes / 1000 , bps,
+	       period);
+
+	printf("\n");
+}
+
+static void stats_poll(struct xsk_socket_info *xsk)
+{
+	unsigned int interval = 2;
+	static struct stats_record previous_stats = { 0 };
+
+	previous_stats.timestamp = gettime();
+
+	/* Trick to pretty printf with thousands separators use %' */
+	setlocale(LC_NUMERIC, "en_US");
+
+	while (!global_exit) {
+		sleep(interval);
+		xsk->stats.timestamp = gettime();
+		stats_print(&xsk->stats, &previous_stats);
+		previous_stats = xsk->stats;
+	}
+	return NULL;
+}
+
 static void rx_and_process(struct config *cfg,
-			   struct xsk_socket_info *xsk_socket, 
-			   int shared_map_fd, __u32 shared_map_type)
+			   struct xsk_socket_info *xsk_socket)
 {
 	struct pollfd fds[2];
 	int ret, nfds = 1;
@@ -581,7 +485,8 @@ static void rx_and_process(struct config *cfg,
 			if (ret <= 0 || ret > 1)
 				continue;
 		}
-		handle_receive_packets(xsk_socket, shared_map_fd, shared_map_type);
+		handle_receive_packets(xsk_socket);
+		stats_poll(xsk_socket);
 	}
 }
 
@@ -591,56 +496,9 @@ static void exit_application(int signal)
 	global_exit = true;
 }
 
-// used in int main only
-// used when getting shared map fd
-// checking if shared fd is what we're looking for
-static int __check_map_fd_info(int map_fd, struct bpf_map_info *info,
-			       struct bpf_map_info *exp)
-{
-	__u32 info_len = sizeof(*info);
-	int err;
-
-	if (map_fd < 0)
-		return EXIT_FAIL;
-
-        /* BPF-info via bpf-syscall */
-	err = bpf_obj_get_info_by_fd(map_fd, info, &info_len);
-	if (err) {
-		fprintf(stderr, "ERR: %s() can't get info - %s\n",
-			__func__,  strerror(errno));
-		return EXIT_FAIL_BPF;
-	}
-
-	if (exp->key_size && exp->key_size != info->key_size) {
-		fprintf(stderr, "ERR: %s() "
-			"Map key size(%d) mismatch expected size(%d)\n",
-			__func__, info->key_size, exp->key_size);
-		return EXIT_FAIL;
-	}
-	if (exp->value_size && exp->value_size != info->value_size) {
-		fprintf(stderr, "ERR: %s() "
-			"Map value size(%d) mismatch expected size(%d)\n",
-			__func__, info->value_size, exp->value_size);
-		return EXIT_FAIL;
-	}
-	if (exp->max_entries && exp->max_entries != info->max_entries) {
-		fprintf(stderr, "ERR: %s() "
-			"Map max_entries(%d) mismatch expected size(%d)\n",
-			__func__, info->max_entries, exp->max_entries);
-		return EXIT_FAIL;
-	}
-	if (exp->type && exp->type  != info->type) {
-		fprintf(stderr, "ERR: %s() "
-			"Map type(%d) mismatch expected type(%d)\n",
-			__func__, info->type, exp->type);
-		return EXIT_FAIL;
-	}
-
-	return 0;
-}
-
 int main(int argc, char **argv)
 {
+	int ret;
 	int xsks_map_fd;
 	void *packet_buffer;
 	uint64_t packet_buffer_size;
@@ -654,10 +512,7 @@ int main(int argc, char **argv)
 	struct xsk_umem_info *umem;
 	struct xsk_socket_info *xsk_socket;
 	struct bpf_object *bpf_obj = NULL;
-	struct bpf_map_info map_expect = { 0 };
-	struct bpf_map_info info = { 0 };
-	int stats_map_fd;
-	int err;
+	pthread_t stats_poll_thread;
 
 	/* Global shutdown handler */
 	signal(SIGINT, exit_application);
@@ -731,26 +586,8 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	/* Lesson#3: Locate map file descriptor */
-	stats_map_fd = find_map_fd(bpf_obj, "xdp_stats_map");
-	if (stats_map_fd < 0) {
-		xdp_link_detach(cfg.ifindex, cfg.xdp_flags, 0);
-		return EXIT_FAIL_BPF;
-	}
-
-	/* Lesson#4: check map info, e.g. datarec is expected size */
-	map_expect.key_size    = sizeof(__u32);
-	map_expect.value_size  = sizeof(struct datarec);
-	map_expect.max_entries = XDP_ACTION_MAX;
-	err = __check_map_fd_info(stats_map_fd, &info, &map_expect);
-	if (err) {
-		fprintf(stderr, "ERR: map via FD not compatible\n");
-		return err;
-	}
-
-
 	/* Receive and count packets than drop them */
-	rx_and_process(&cfg, xsk_socket, stats_map_fd, info.type);
+	rx_and_process(&cfg, xsk_socket);
 
 	/* Cleanup */
 	xsk_socket__delete(xsk_socket->xsk);
