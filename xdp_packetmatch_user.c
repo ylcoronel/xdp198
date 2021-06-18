@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0 */
+
 #include <assert.h>
 #include <errno.h>
 #include <getopt.h>
