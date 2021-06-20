@@ -64,8 +64,9 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	payload_size = ntohs(udp->len) - sizeof(*udp);
 
 	payload = (unsigned char *)udp + sizeof(*udp);
-    if ((void *)payload + payload_size > data_end)
+    if ((void *)payload + payload_size > data_end){
         return XDP_PASS;
+	}
 
 	int i,j;
 	j = 0;
