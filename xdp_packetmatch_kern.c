@@ -67,12 +67,14 @@ int  xdp_stats1_func(struct xdp_md *ctx)
     if ((void *)payload + payload_size > data_end)
         return XDP_PASS;
 
+	int i,j;
+	j = 0;
     // Compare each byte, exit if a difference is found.
     for (i = 0; i < payload_size; i++){
-        if (payload[i] == match_pattern[j])
+        if (payload[i] == match_pattern[j]){
 			lock_xadd(&rec->match, 1);
 			j++;
-		else
+		}else
 			j = 0;
 	}
 
