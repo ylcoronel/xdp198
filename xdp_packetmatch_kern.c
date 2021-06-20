@@ -63,7 +63,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	udp = (void *)ip + sizeof(*ip);
 	payload_size = ntohs(udp->len) - sizeof(*udp);
 
-	lock_xadd(&rec->payload_size, payload_size);
+	&rec->payload_size = payload_size;
 
 	return XDP_PASS;
 }
