@@ -29,11 +29,11 @@ struct bpf_map_def SEC("maps") xdp_stats_map = {
 SEC("xdp_stats1")
 int  xdp_stats1_func(struct xdp_md *ctx)
 {
-	//void *data_end = (void *)(long)ctx->data_end;
+	void *data_end = (void *)(long)ctx->data_end;
 	void *data     = (void *)(long)ctx->data;
 	unsigned int payload_size;
 	struct ethhdr *eth = data;
-    //unsigned char *payload;
+    unsigned char *payload;
     struct udphdr *udp;
     struct iphdr *ip;
 
@@ -54,16 +54,27 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	 * use an atomic operation.
 	 */
 	lock_xadd(&rec->rx_packets, 1);
-	int *rcvdpackets = (int*)&rec->rx_packets;
-	int k = *rcvdpackets;
-	if(k > 200)
-		lock_xadd(&rec->match, 1);
+	//int *rcvdpackets = (int*)&rec->rx_packets;
+	//int k = *rcvdpackets;
+	//if(k > 200)
+	//	lock_xadd(&rec->match, 1);
     
 	ip = data + sizeof(*eth);
 	udp = (void *)ip + sizeof(*ip);
 	payload_size = ntohs(udp->len) - sizeof(*udp);
 
-	&rec->payload_size = payload_size;
+	payload = (unsigned char *)udp + sizeof(*udp);
+    if ((void *)payload + payload_size > data_end)
+        return XDP_PASS;
+
+    // Compare each byte, exit if a difference is found.
+    for (i = 0; i < payload_size; i++){
+        if (payload[i] == match_pattern[j])
+			lock_xadd(&rec->match, 1);
+			j++;
+		else
+			j = 0;
+	}
 
 	return XDP_PASS;
 }
