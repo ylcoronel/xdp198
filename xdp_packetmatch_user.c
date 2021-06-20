@@ -22,7 +22,7 @@ static const char *__doc__ = "XDP loader and stats program\n"
 #include "common_kern_user.h"
 #include "bpf_util.h" /* bpf_num_possible_cpus */
 
-static const char *default_filename = "xdp_prog_kern.o";
+static const char *default_filename = "xdp_packetmatch_kern.o";
 static const char *default_progsec = "xdp_stats1";
 
 static const struct option_wrapper long_options[] = {
