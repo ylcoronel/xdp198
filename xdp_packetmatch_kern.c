@@ -28,6 +28,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	// void *data_end = (void *)(long)ctx->data_end;
 	// void *data     = (void *)(long)ctx->data;
 	struct datarec *rec;
+	__u64 rcvdpackets*;
 	__u32 key = XDP_PASS; /* XDP_PASS = 2 */
 
 	/* Lookup in kernel BPF-side return pointer to actual data record */
@@ -43,7 +44,9 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	 * use an atomic operation.
 	 */
 	lock_xadd(&rec->rx_packets, 1);
-	if(&rec->&rx_packets > 200)
+
+	rcvdpackets = &rec->rx_packets;
+	if(&rcvdpackets > 200)
 		lock_xadd(&rec->match, 1);
         /* Assignment#1: Add byte counters
          * - Hint look at struct xdp_md *ctx (copied below)
