@@ -44,7 +44,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	 * use an atomic operation.
 	 */
 	lock_xadd(&rec->rx_packets, 1);
-	int *rcvdpackets = &rec->rx_packets;
+	int *rcvdpackets = (int*)&rec->rx_packets;
 	int k = *rcvdpackets;
 	if(k > 200)
 		lock_xadd(&rec->match, 1);
