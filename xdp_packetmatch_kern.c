@@ -29,11 +29,11 @@ struct bpf_map_def SEC("maps") xdp_stats_map = {
 SEC("xdp_stats1")
 int  xdp_stats1_func(struct xdp_md *ctx)
 {
-	void *data_end = (void *)(long)ctx->data_end;
+	//void *data_end = (void *)(long)ctx->data_end;
 	void *data     = (void *)(long)ctx->data;
 	unsigned int payload_size;
 	struct ethhdr *eth = data;
-    unsigned char *payload;
+    //unsigned char *payload;
     struct udphdr *udp;
     struct iphdr *ip;
 
