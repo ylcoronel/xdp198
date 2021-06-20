@@ -28,7 +28,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	// void *data_end = (void *)(long)ctx->data_end;
 	// void *data     = (void *)(long)ctx->data;
 	struct datarec *rec;
-	__u64 rcvdpackets*;
+	__u64 *rcvdpackets;
 	__u32 key = XDP_PASS; /* XDP_PASS = 2 */
 
 	/* Lookup in kernel BPF-side return pointer to actual data record */
