@@ -43,7 +43,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	 * use an atomic operation.
 	 */
 	lock_xadd(&rec->rx_packets, 1);
-	if(&rec->rx_packets > 200)
+	if(&rec->&rx_packets > 200)
 		lock_xadd(&rec->match, 1);
         /* Assignment#1: Add byte counters
          * - Hint look at struct xdp_md *ctx (copied below)
