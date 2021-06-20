@@ -68,12 +68,13 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
 
-	int i,j;
+	int i,j, offset;
 	i = 0;
 	j = 0;
+	offset = 0;
 	char match_pattern[5] = "match";
     // Compare each byte, exit if a difference is found.
-	for(j = 0; j < payload_size; j+=j;){
+	for(j = 0; j < payload_size; j+=offset, offset++){
     	for (i = 0; i < 5; i++, j++){
         	if (payload[j] != match_pattern[i])
 				break;
