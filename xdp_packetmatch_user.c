@@ -123,7 +123,7 @@ static void stats_print(struct stats_record *stats_rec,
 	{
 		char *fmt = "%-12s %'11lld pkts (%'10.0f pps)"
 			//" %'11lld Kbytes (%'6.0f Mbits/s)"
-			" period:%f\n";
+			" period:%f\n match? %ld\n";
 		const char *action = action2str(XDP_PASS);
 		rec  = &stats_rec->stats[0];
 		prev = &stats_prev->stats[0];
@@ -135,7 +135,7 @@ static void stats_print(struct stats_record *stats_rec,
 		packets = rec->total.rx_packets - prev->total.rx_packets;
 		pps     = packets / period;
 
-		printf(fmt, action, rec->total.rx_packets, pps, period);
+		printf(fmt, action, rec->total.rx_packets, pps, period, rec->total.match);
 	}
 }
 
@@ -180,6 +180,7 @@ static bool map_collect(int fd, __u32 map_type, __u32 key, struct record *rec)
 
 	/* Assignment#1: Add byte counters */
 	rec->total.rx_packets = value.rx_packets;
+	rec->total.match = value.match;
 	return true;
 }
 
