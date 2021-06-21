@@ -367,6 +367,8 @@ static void handle_receive_packets(struct xsk_socket_info *xsk)
 		xsk_ring_prod__submit(&xsk->umem->fq, stock_frames);
 	}
 
+	printf("I'm now here\n");
+
 	/* Process received packets */
 	for (i = 0; i < rcvd; i++) {
 		uint64_t addr = xsk_ring_cons__rx_desc(&xsk->rx, idx_rx)->addr;
@@ -400,6 +402,7 @@ static void rx_and_process(struct config *cfg,
 			if (ret <= 0 || ret > 1)
 				continue;
 		}
+		printf("i'm here\n");
 		handle_receive_packets(xsk_socket);
 	}
 }
