@@ -381,7 +381,6 @@ static void handle_receive_packets(struct xsk_socket_info *xsk)
 	xsk_ring_cons__release(&xsk->rx, rcvd);
 	xsk->stats.rx_packets += rcvd;
 
-	/* Do we need to wake up the kernel for transmission */
 	complete_tx(xsk);
   }
 
@@ -506,7 +505,7 @@ int main(int argc, char **argv)
 	struct config cfg = {
 		.ifindex   = -1,
 		.do_unload = false,
-		.filename = "xdp_packetmatch_kern.o",
+		.filename = "",
 		.progsec = "xdp_sock"
 	};
 	struct xsk_umem_info *umem;
