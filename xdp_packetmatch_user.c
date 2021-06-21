@@ -399,10 +399,12 @@ static void rx_and_process(struct config *cfg,
 	while(!global_exit) {
 		if (cfg->xsk_poll_mode) {
 			ret = poll(fds, nfds, -1);
-			if (ret <= 0 || ret > 1)
+			printf("hello\n");
+			if (ret <= 0 || ret > 1){
+				printf("hi\n");
 				continue;
+			}
 		}
-		printf("i'm here\n");
 		handle_receive_packets(xsk_socket);
 	}
 }
