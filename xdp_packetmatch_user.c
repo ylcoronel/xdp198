@@ -342,6 +342,7 @@ static void handle_receive_packets(struct xsk_socket_info *xsk)
 	uint32_t idx_rx = 0, idx_fq = 0;
 	int ret;
 
+	printf("I'm now here\n");
 	rcvd = xsk_ring_cons__peek(&xsk->rx, RX_BATCH_SIZE, &idx_rx);
 	if (!rcvd)
 		return;
@@ -367,7 +368,7 @@ static void handle_receive_packets(struct xsk_socket_info *xsk)
 		xsk_ring_prod__submit(&xsk->umem->fq, stock_frames);
 	}
 
-	printf("I'm now here\n");
+	
 
 	/* Process received packets */
 	for (i = 0; i < rcvd; i++) {
@@ -399,12 +400,14 @@ static void rx_and_process(struct config *cfg,
 	while(!global_exit) {
 		if (cfg->xsk_poll_mode) {
 			ret = poll(fds, nfds, -1);
-			printf("hello\n");
+			printf("first if\n");
 			if (ret <= 0 || ret > 1){
-				printf("hi\n");
 				continue;
+				printf("second if\n");
 			}
+
 		}
+		printf("i'm here\n");
 		handle_receive_packets(xsk_socket);
 	}
 }
