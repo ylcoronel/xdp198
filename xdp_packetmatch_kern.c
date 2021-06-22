@@ -101,6 +101,9 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 		}
 		if (payload[j] == match_pattern[i]){
 			for(i = 0; i < 5; i++, j++){
+				if ((void *)payload + j > data_end){
+        			return XDP_PASS;
+				}
 				if (payload[j] == match_pattern[i]){
 					m++;
 				}else
