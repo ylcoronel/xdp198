@@ -47,8 +47,11 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 		struct iphdr *ip = data + sizeof (* eth);
 		if (( void *) ip + sizeof (* ip) <= data_end ) {
 			if (ip -> protocol == IPPROTO_UDP ) {
-				if (udp->dest == ntohs(5201)) {
-					lock_xadd(&rec->rx_packets, 1);
+				struct udphdr *udp = (void*)ip + sizeof(*ip);
+            	if ((void*)udp + sizeof(*udp) <= data_end) {
+					if (udp->dest == ntohs(5201)) {
+						lock_xadd(&rec->rx_packets, 1);
+					}
 				}
 			}
 		}
