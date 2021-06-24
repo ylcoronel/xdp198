@@ -29,13 +29,6 @@ struct bpf_map_def SEC("maps") xdp_stats_map = {
 SEC("xdp_stats1")
 int  xdp_stats1_func(struct xdp_md *ctx)
 {
-	void *data_end = (void *)(long)ctx->data_end;
-	void *data     = (void *)(long)ctx->data;
-	unsigned int payload_size;
-	struct ethhdr *eth = data;
-    unsigned char *payload;
-    struct udphdr *udp;
-    struct iphdr *ip;
 
 	struct datarec *rec;
 	
@@ -43,18 +36,21 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	/* Lookup in kernel BPF-side return pointer to actual data record */
 	rec = bpf_map_lookup_elem(&xdp_stats_map, &key);
-	/* BPF kernel-side verifier will reject program if the NULL pointer
-	 * check isn't performed here. Even-though this is a static array where
-	 * we know key lookup XDP_PASS always will succeed.
-	 */
-	if (!rec)
+	if (!rec){
 		return XDP_ABORTED;
+	}
 
-	/* Multiple CPUs can access data record. Thus, the accounting needs to
-	 * use an atomic operation.
-	 */
-	lock_xadd(&rec->rx_packets, 1);
-
+	void *data_end = (void *)(long)ctx->data_end;
+	void *data     = (void *)(long)ctx->data;
+	struct ethhdr *eth = data;
+	if (( void *) eth + sizeof (* eth) <= data_end ) {
+		struct iphdr *ip = data + sizeof (* eth);
+		if (( void *) ip + sizeof (* ip) <= data_end ) {
+			if (ip -> protocol == IPPROTO_UDP ) {
+			lock_xadd(&rec->rx_packets, 1);
+			}
+		}
+	}
 
 	return XDP_PASS;
 }
