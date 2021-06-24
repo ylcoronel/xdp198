@@ -54,54 +54,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	 * use an atomic operation.
 	 */
 	lock_xadd(&rec->rx_packets, 1);
-	//int *rcvdpackets = (int*)&rec->rx_packets;
-	//int k = *rcvdpackets;
-	//if(k > 200)
-	//	lock_xadd(&rec->match, 1);
-    
-	if ((void *)eth + sizeof(*eth) > data_end){
-        return XDP_PASS;
-	}
 
-    ip = data + sizeof(*eth);
-    if ((void *)ip + sizeof(*ip) > data_end){
-        return XDP_PASS;
-	}
-
-    if (ip->protocol != IPPROTO_UDP){
-        return XDP_PASS;
-	}
-
-    udp = (void *)ip + sizeof(*ip);
-    if ((void *)udp + sizeof(*udp) > data_end){
-        return XDP_PASS;
-	}
-
-    if (udp->dest != ntohs(5005)){
-        return XDP_PASS;
-	}
-
-	payload_size = ntohs(udp->len) - sizeof(*udp);
-
-	payload = (unsigned char *)udp + sizeof(*udp)-1;
-    if ((void *)payload + payload_size > data_end){
-        return XDP_PASS;
-	}
-
-	int i,j, m;
-	i = 0;
-	j = 0;
-	m = 0;
-	char match_pattern[5] = "match";
-
-    // Compare each byte, exit if a difference is found.
-	if (payload_size < sizeof(match_pattern) - 1) {
-        return XDP_PASS;
-	}
-
-	if(payload == match_pattern){
-		lock_xadd(&rec->match, 1);
-	}
 
 	return XDP_PASS;
 }
