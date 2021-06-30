@@ -88,7 +88,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	        i = dummy;
 		}
 
-		l = i-k
+		l = i-k;
 
         if (payload[l] == match_pattern[j]){
 			ifctr = 1;
@@ -98,7 +98,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 			k++;
 			j--;
 		} else if (payload[l] != match_pattern[j]){
-			j = sizeof(match_pattern)-2
+			j = sizeof(match_pattern)-2;
 			k = 0;
 			dummy = 0;
 			ifctr = 0;
