@@ -81,27 +81,17 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	}
 
 	int j = sizeof(match_pattern)-2, ctr = 0;
-    int k = 0, l = 0, dummy = 0, ifctr = 0;
+    int ifctr = 0;
 
     for(i = j; i < payload_size; i++){
-		if(ifctr == 1){
-	        i = dummy;
-		}
 
-		l = i-k;
-
-        if (payload[l] == match_pattern[j]){
+        if (payload[i] == match_pattern[j]){
 			ifctr = 1;
 			if(j == sizeof(match_pattern)-2){
-				dummy = i;
+				ctr++;
 			}
-			k++;
-			j--;
 		} else if (payload[l] != match_pattern[j]){
 			j = sizeof(match_pattern)-2;
-			k = 0;
-			dummy = 0;
-			ifctr = 0;
 		}
 
 		if(j == 0){
