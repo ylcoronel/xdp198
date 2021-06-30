@@ -41,20 +41,53 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	}
 
 	void *data_end = (void *)(long)ctx->data_end;
-	void *data     = (void *)(long)ctx->data;
-	struct ethhdr *eth = data;
-	if (( void *) eth + sizeof (* eth) <= data_end ) {
-		struct iphdr *ip = data + sizeof (* eth);
-		if (( void *) ip + sizeof (* ip) <= data_end ) {
-			if (ip -> protocol == IPPROTO_UDP ) {
-				struct udphdr *udp = (void*)ip + sizeof(*ip);
-            	if ((void*)udp + sizeof(*udp) <= data_end) {
-					if (udp->dest == ntohs(5201)) {
-						lock_xadd(&rec->rx_packets, 1);
-					}
-				}
-			}
+    void *data = (void *)(long)ctx->data;
+    char match_pattern[] = "test";
+    unsigned int payload_size, i;
+    struct ethhdr *eth = data;
+    unsigned char *payload;
+    struct udphdr *udp;
+    struct iphdr *ip;
+
+    if ((void *)eth + sizeof(*eth) > data_end)
+        return XDP_PASS;
+
+    ip = data + sizeof(*eth);
+    if ((void *)ip + sizeof(*ip) > data_end)
+        return XDP_PASS;
+
+    if (ip->protocol != IPPROTO_UDP)
+        return XDP_PASS;
+
+    udp = (void *)ip + sizeof(*ip);
+    if ((void *)udp + sizeof(*udp) > data_end)
+        return XDP_PASS;
+
+	// change this
+    if (udp->dest != ntohs(5005))
+        return XDP_PASS;
+	else
+		lock_xadd(&rec->rx_packets, 1);
+
+    payload_size = ntohs(udp->len) - sizeof(*udp);
+
+    // Point to start of payload.
+    payload = (unsigned char *)udp + sizeof(*udp);
+    if ((void *)payload + payload_size > data_end)
+        return XDP_PASS;
+
+	int j = 0;
+	
+    for (i = 0; i < payload_size; i++){
+        if (payload[i] == match_pattern[j]){
+			j++;
+		}else if(payload[i] != match_pattern[j]){
+            return XDP_PASS;
+			j = 0;
 		}
+
+		if(j == sizeof(match_pattern)-1)
+			return XDP_PASS;
 	}
 
 	return XDP_PASS;
