@@ -64,10 +64,9 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 
 	// change this
-    if (udp->dest != ntohs(5005))
+    if (udp->dest != ntohs(5201))
         return XDP_PASS;
-	else
-		lock_xadd(&rec->rx_packets, 1);
+		
 
     payload_size = ntohs(udp->len) - sizeof(*udp);
 
@@ -87,7 +86,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 		}
 
 		if(j == sizeof(match_pattern)-1)
-			return XDP_PASS;
+			lock_xadd(&rec->rx_packets, 1);
 	}
 
 	return XDP_PASS;
