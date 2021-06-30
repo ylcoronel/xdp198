@@ -1,4 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 */
+
+//BM IMPLEMENTATION
+
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
 #include <arpa/inet.h>
@@ -64,7 +67,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 
 	// change this
-    if (udp->dest != ntohs(5005))
+    if (udp->dest != ntohs(5201))
         return XDP_PASS;
 	else
 		lock_xadd(&rec->rx_packets, 1);
@@ -73,22 +76,38 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
     // Point to start of payload.
     payload = (unsigned char *)udp + sizeof(*udp);
-    if ((void *)payload + payload_size > data_end)
+    if ((void *)payload + payload_size > data_end){
         return XDP_PASS;
-
-	int j = 0;
-	
-    for (i = 0; i < payload_size; i++){
-        if (payload[i] == match_pattern[j]){
-			j++;
-		}else if(payload[i] != match_pattern[j]){
-            return XDP_PASS;
-			j = 0;
-		}
-
-		if(j == sizeof(match_pattern)-1)
-			return XDP_PASS;
 	}
+
+	int j = sizeof(match_pattern)-2, ctr = 0;
+    int k = 0;
+
+    for(i = j; i < payload_size; i++){
+        if (payload[i] == match_pattern[j]){
+            for (k = i; k > 0; k--){
+                if (payload[k] == match_pattern[j]){
+			        j--;
+		        }else if(payload[k] != match_pattern[j]){
+			        j = sizeof(match_pattern)-2;
+                    break;
+		        }
+
+                if(j == 0){
+                    ctr++;
+                    break;
+                }
+            }
+        }
+
+        if(ctr > 0)
+            break;
+	}
+
+	if(ctr>0){
+		lock_xadd(&rec->match, 1);
+	}
+
 
 	return XDP_PASS;
 }

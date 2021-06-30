@@ -136,6 +136,7 @@ static void stats_print(struct stats_record *stats_rec,
 		pps     = packets / period;
 
 		printf(fmt, action, rec->total.rx_packets, pps, period);
+		printf("Matched packets: %lld\n", rec->total.match);
 	}
 }
 
@@ -180,6 +181,7 @@ static bool map_collect(int fd, __u32 map_type, __u32 key, struct record *rec)
 
 	/* Assignment#1: Add byte counters */
 	rec->total.rx_packets = value.rx_packets;
+	rec->total.match = value.match;
 	return true;
 }
 
