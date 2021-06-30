@@ -27,7 +27,7 @@ struct bpf_map_def SEC("maps") xdp_stats_map = {
 #endif
 
 SEC("xdp_stats1")
-int xdp_stats1_func(struct xdp_md *ctx)
+int  xdp_stats1_func(struct xdp_md *ctx)
 {
 
 	struct datarec *rec;
@@ -64,11 +64,10 @@ int xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 
 	// change this
-    if (udp->dest != ntohs(5201))
+    if (udp->dest != ntohs(5005))
         return XDP_PASS;
 	else
 		lock_xadd(&rec->rx_packets, 1);
-		
 
     payload_size = ntohs(udp->len) - sizeof(*udp);
 
@@ -88,7 +87,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
 		}
 
 		if(j == sizeof(match_pattern)-1)
-			lock_xadd(&rec->match, 1);
+			return XDP_PASS;
 	}
 
 	return XDP_PASS;
