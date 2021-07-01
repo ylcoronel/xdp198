@@ -45,9 +45,9 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char *match_pattern[9] = {"FJDMFOEOLTUUWU","HJGFUJKFMYLDCBOXVJTRTEGF", "CCFHT", "EGENLZRNEYILONYHKUOPGRGU", "XYGKLGPTNEGMVV",
-     "UGCBCDYALKNRBGEFMSDJN", "FYHLXQHFUIHXIHI", "ZPIOKVVIDGHTONNYWMJGWE", "FFEVILXXVNHRIRUR"};
-	int pattern_sizes[9] = {14, 24, 5, 24, 14, 21, 15, 22, 16};
+    char *match_pattern[8] = {"FJDMFOEOLTUUWU","HJGFUJKFMYLDCBOXVJTRTEGF", "CCFHT", "EGENLZRNEYILONYHKUOPGRGU", "XYGKLGPTNEGMVV",
+     "UGCBCDYALKNRBGEFMSDJN", "FYHLXQHFUIHXIHI", "ZPIOKVVIDGHTONNYWMJGWE"};
+	int pattern_sizes[8] = {14, 24, 5, 24, 14, 21, 15, 22};
     unsigned int payload_size, i;
     struct ethhdr *eth = data;
     unsigned char *payload;
@@ -204,22 +204,6 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 		}
 
 		if(j == pattern_sizes[7]-1){
-			ctr++;
-			return XDP_PASS;
-		}
-	}
-
-	// 9th pattern
-	j = 0, ctr = 0;
-	
-    for (i = 0; i < payload_size; i++){
-        if (payload[i] == match_pattern[8][j]){
-			j++;
-		}else if(payload[i] != match_pattern[8][j]){
-			j = 0;
-		}
-
-		if(j == pattern_sizes[8]-1){
 			ctr++;
 			return XDP_PASS;
 		}
