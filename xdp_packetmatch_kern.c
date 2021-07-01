@@ -72,8 +72,6 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
     payload_size = ntohs(udp->len) - sizeof(*udp);
 
-    lock_xadd(&rec->rx_packets, 1);
-    
     // Point to start of payload.
     payload = (unsigned char *)udp + sizeof(*udp);
     if ((void *)payload + payload_size > data_end){
@@ -113,6 +111,8 @@ int  xdp_stats1_func(struct xdp_md *ctx)
             break;
         }
 	}
+
+    lock_xadd(&rec->rx_packets, 1);
 
     if(some_ctr > 0){
         lock_xadd(&rec->rx_packets, 1);
