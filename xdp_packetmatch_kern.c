@@ -108,10 +108,9 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         }
 	}
 
-    if(i == payload_size){
-        lock_xadd(&rec->rx_packets, 1);
-    }
+    lock_xadd(&rec->rx_packets, i);
     
+
 	if(ctr>0){
 		lock_xadd(&rec->match, 1);
 	}
