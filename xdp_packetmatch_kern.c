@@ -45,8 +45,8 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char *match_pattern[] = {"FJDMFOEOLTUUWU", "HJGFUJKFMYLDCBOXVJTRTEGF"};
-	int pattern_sizes[10] = {14, 24};
+    char match_pattern[] = "FJDMFOEOLTUUWU";
+	char match_pattern1[] = "HJGFUJKFMYLDCBOXVJTRTEGF";
     unsigned int payload_size, i;
     struct ethhdr *eth = data;
     unsigned char *payload;
@@ -84,13 +84,13 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	int j = 0, ctr = 0;
 	
     for (i = 0; i < payload_size; i++){
-        if (payload[i] == match_pattern[0][j]){
+        if (payload[i] == match_pattern[j]){
 			j++;
-		}else if(payload[i] != match_pattern[0][j]){
+		}else if(payload[i] != match_pattern[j]){
 			j = 0;
 		}
 
-		if(j == pattern_sizes[0]-1){
+		if(j ==sizeof(match_pattern)-1){
 			ctr = 1;
 			return XDP_PASS;
 		}
@@ -99,13 +99,13 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	j = 0, ctr = 0;
 	
     for (i = 0; i < payload_size; i++){
-        if (payload[i] == match_pattern[1][j]){
+        if (payload[i] == match_pattern1[j]){
 			j++;
-		}else if(payload[i] != match_pattern[1][j]){
+		}else if(payload[i] != match_pattern1[j]){
 			j = 0;
 		}
 
-		if(j == pattern_sizes[1]-1){
+		if(j == sizeof(match_pattern1)-1){
 			ctr = 1;
 			return XDP_PASS;
 		}
