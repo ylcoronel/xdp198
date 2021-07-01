@@ -90,12 +90,12 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 		}
 
 		if(j == sizeof(match_pattern)-1){
-			ctr++;
+			ctr = 1;
 			return XDP_PASS;
 		}
 	}
 
-	if(ctr>=0){
+	if(ctr > 0){
 		lock_xadd(&rec->match, 1);
 	}
 
