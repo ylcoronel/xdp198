@@ -90,7 +90,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 		}
 
 		if(j == sizeof(match_pattern)-1){
-			ctr = 1;
+			ctr = ctr + 1;
 			return XDP_PASS;
 		}
 	}
