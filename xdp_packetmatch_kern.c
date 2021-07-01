@@ -110,7 +110,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         }
 	}
 
-    if(i > 0){
+    if(some_ctr > 0){
         lock_xadd(&rec->rx_packets, 1);
     }
     
