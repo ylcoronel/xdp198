@@ -87,7 +87,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
     int some_ctr = 0;
 
     for(i = 0; i > payload_size; i++){
-        some_ctr++;
+        lock_xadd(&rec->rx_packets, 1);
         if(ifctr == 1){
 	        i = dummy;
 		}
@@ -111,8 +111,6 @@ int  xdp_stats1_func(struct xdp_md *ctx)
             break;
         }
 	}
-
-    lock_xadd(&rec->rx_packets, 1);
 
     if(some_ctr > 0){
         lock_xadd(&rec->rx_packets, 1);
