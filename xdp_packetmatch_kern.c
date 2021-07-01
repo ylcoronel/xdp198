@@ -45,7 +45,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char match_pattern[] = "test";
+    char match_pattern[] = "FJDMFOEOLTUUWU";
     unsigned int payload_size, i;
     struct ethhdr *eth = data;
     unsigned char *payload;
@@ -69,8 +69,6 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	// change this
     if (udp->dest != ntohs(5201))
         return XDP_PASS;
-	else
-		lock_xadd(&rec->rx_packets, 1);
 
     payload_size = ntohs(udp->len) - sizeof(*udp);
 
@@ -110,6 +108,10 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         }
 	}
 
+    if(i == payload_size){
+        lock_xadd(&rec->rx_packets, 1);
+    }
+    
 	if(ctr>0){
 		lock_xadd(&rec->match, 1);
 	}
