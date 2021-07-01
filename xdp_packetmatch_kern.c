@@ -81,7 +81,6 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	int j = 0, ctr = 0;
 	
     for (i = 0; i < payload_size; i++){
-        lock_xadd(&rec->rx_packets, 1);
         if (payload[i] == match_pattern[j]){
 			j++;
 		}else if(payload[i] != match_pattern[j]){
@@ -93,6 +92,10 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 			return XDP_PASS;
 		}
 	}
+
+    if(i > 0){
+        lock_xadd(&rec->rx_packets, 1);
+    }
 
 	if(ctr > 0){
 		lock_xadd(&rec->match, 1);
