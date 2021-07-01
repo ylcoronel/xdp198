@@ -45,7 +45,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char match_pattern[] = "test";
+    char match_pattern1[] = "FJDMFOEOLTUUWU";
     unsigned int payload_size, i;
     struct ethhdr *eth = data;
     unsigned char *payload;
@@ -83,13 +83,13 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	int j = 0, ctr = 0;
 	
     for (i = 0; i < payload_size; i++){
-        if (payload[i] == match_pattern[j]){
+        if (payload[i] == match_pattern1[j]){
 			j++;
-		}else if(payload[i] != match_pattern[j]){
+		}else if(payload[i] != match_pattern1[j]){
 			j = 0;
 		}
 
-		if(j == sizeof(match_pattern)-1){
+		if(j == sizeof(match_pattern1)-1){
 			ctr = 1;
 			return XDP_PASS;
 		}
