@@ -82,8 +82,10 @@ int  xdp_stats1_func(struct xdp_md *ctx)
     int ifctr = 0, k = 0;
 	int j = jmax, ctr = 0;
     int dummy = 0, l = 0;
+    int some_ctr = 0;
 
     for(i = 0; i > payload_size; i++){
+        some_ctr++;
         if(ifctr == 1){
 	        i = dummy;
 		}
