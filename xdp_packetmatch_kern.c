@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 
-//BM IMPLEMENTATION
+//KMP IMPLEMENTATION
 
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
@@ -45,7 +45,9 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char match_pattern[] = "test";
+    char *match_pattern[10] = {"FJDMFOEOLTUUWU","HJGFUJKFMYLDCBOXVJTRTEGF", "CCFHT", "EGENLZRNEYILONYHKUOPGRGU", "XYGKLGPTNEGMVV",
+     "UGCBCDYALKNRBGEFMSDJN", "FYHLXQHFUIHXIHI", "ZPIOKVVIDGHTONNYWMJGWE", "FFEVILXXVNHRIRUR", "SOUVLXARDXZPWYM"};
+	int pattern_sizes[10] = {14, 24, 5, 24, 14, 21, 15, 22, 16, 15};
     unsigned int payload_size, i;
     struct ethhdr *eth = data;
     unsigned char *payload;
@@ -80,37 +82,167 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
 
-	int j = sizeof(match_pattern)-2, ctr = 0;
-    int k = 0, l = 0, dummy = 0, ifctr = 0;
-
-    for(i = j; i > payload_size; i--){
-		if(ifctr == 1){
-	        i = dummy;
+	int j = 0, ctr = 0;
+	
+    for (i = 0; i < payload_size; i++){
+        if (payload[i] == match_pattern[0][j]){
+			j++;
+		}else if(payload[i] != match_pattern[0][j]){
+			j = 0;
 		}
 
-		l = i-k;
-
-        if(j == sizeof(match_pattern)-2){
-		    dummy = i;
+		if(j == pattern_sizes[0]-1){
+			ctr++;
+			return XDP_PASS;
 		}
-		
-        if (payload[l] == match_pattern[j]){
-            ifctr = 1;
-			k++;
-			j--;
-		}else if (payload[l] != match_pattern[j]){
-			j = sizeof(match_pattern)-2;
-			k = 0;
-			dummy = 0;
-			ifctr = 0;
-
-		if(j == 0){
-            ctr++;
-            break;
-        }
 	}
 
-	if(ctr>0){
+	// 2nd pattern
+	j = 0, ctr = 0;
+	
+    for (i = 0; i < payload_size; i++){
+        if (payload[i] == match_pattern[1][j]){
+			j++;
+		}else if(payload[i] != match_pattern[1][j]){
+			j = 0;
+		}
+
+		if(j == pattern_sizes[1]-1){
+			ctr++;
+			return XDP_PASS;
+		}
+	}
+
+	// 3rd pattern
+	j = 0, ctr = 0;
+	
+    for (i = 0; i < payload_size; i++){
+        if (payload[i] == match_pattern[2][j]){
+			j++;
+		}else if(payload[i] != match_pattern[2][j]){
+			j = 0;
+		}
+
+		if(j == pattern_sizes[2]-1){
+			ctr++;
+			return XDP_PASS;
+		}
+	}
+
+	// 4th pattern
+	j = 0, ctr = 0;
+	
+    for (i = 0; i < payload_size; i++){
+        if (payload[i] == match_pattern[3][j]){
+			j++;
+		}else if(payload[i] != match_pattern[3][j]){
+			j = 0;
+		}
+
+		if(j == pattern_sizes[3]-1){
+			ctr++;
+			return XDP_PASS;
+		}
+	}
+
+	// 5th pattern
+	j = 0, ctr = 0;
+	
+    for (i = 0; i < payload_size; i++){
+        if (payload[i] == match_pattern[4][j]){
+			j++;
+		}else if(payload[i] != match_pattern[4][j]){
+			j = 0;
+		}
+
+		if(j == pattern_sizes[4]-1){
+			ctr++;
+			return XDP_PASS;
+		}
+	}
+
+	// 6th pattern
+	j = 0, ctr = 0;
+	
+    for (i = 0; i < payload_size; i++){
+        if (payload[i] == match_pattern[5][j]){
+			j++;
+		}else if(payload[i] != match_pattern[5][j]){
+			j = 0;
+		}
+
+		if(j == pattern_sizes[5]-1){
+			ctr++;
+			return XDP_PASS;
+		}
+	}
+
+	// 7th pattern
+	j = 0, ctr = 0;
+	
+    for (i = 0; i < payload_size; i++){
+        if (payload[i] == match_pattern[6][j]){
+			j++;
+		}else if(payload[i] != match_pattern[6][j]){
+			j = 0;
+		}
+
+		if(j == pattern_sizes[6]-1){
+			ctr++;
+			return XDP_PASS;
+		}
+	}
+
+	// 8th pattern
+	j = 0, ctr = 0;
+	
+    for (i = 0; i < payload_size; i++){
+        if (payload[i] == match_pattern[7][j]){
+			j++;
+		}else if(payload[i] != match_pattern[7][j]){
+			j = 0;
+		}
+
+		if(j == pattern_sizes[7]-1){
+			ctr++;
+			return XDP_PASS;
+		}
+	}
+
+	// 9th pattern
+	j = 0, ctr = 0;
+	
+    for (i = 0; i < payload_size; i++){
+        if (payload[i] == match_pattern[8][j]){
+			j++;
+		}else if(payload[i] != match_pattern[8][j]){
+			j = 0;
+		}
+
+		if(j == pattern_sizes[8]-1){
+			ctr++;
+			return XDP_PASS;
+		}
+	}
+
+	// 10th pattern
+	j = 0, ctr = 0;
+	
+    for (i = 0; i < payload_size; i++){
+        if (payload[i] == match_pattern[9][j]){
+			j++;
+		}else if(payload[i] != match_pattern[9][j]){
+			j = 0;
+		}
+
+		if(j == pattern_sizes[9]-1){
+			ctr++;
+			return XDP_PASS;
+		}
+	}
+
+
+	if(ctr>=0){
 		lock_xadd(&rec->match, 1);
 	}
 
