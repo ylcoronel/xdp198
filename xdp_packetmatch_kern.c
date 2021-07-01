@@ -83,13 +83,10 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	int jmax = sizeof(match_pattern)-2;
 
 	int j = jmax, ctr = 0;
-    //int l = 0, ;
-	//int dummy = 0, k = 0, ifctr = 0;
 
     for(i = j; i > payload_size; i++){
-		
         if (payload[i] == match_pattern[j]){
-			j=j+1;
+			j++;
 		}else if (payload[i] != match_pattern[j]){
 			j = 3;
 		}
