@@ -79,8 +79,8 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	}
 
 	int j = 0, ctr = 0;
-    
-	#pragma clang loop unroll(full)
+
+	 #pragma clang loop unroll_count(20)
     for (i = 0; i < payload_size; i++){
         if (payload[i] == match_pattern[j]){
 			j++;
