@@ -89,7 +89,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
     for(i = j; i > payload_size; i++){
 		
         if (payload[i] == match_pattern[j]){
-			j=j-1;
+			j=j+1;
 		}else if (payload[i] != match_pattern[j]){
 			j = jmax;
 		}
