@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 
-//BM IMPLEMENTATION
+//KMP IMPLEMENTATION
 
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
@@ -78,45 +78,23 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
 
-    lock_xadd(&rec->match, 1);
-
-	int jmax = sizeof(match_pattern)-2;
-    int ifctr = 0, k = 0;
-	int j = jmax, ctr = 0;
-    int dummy = 0, l = 0;
-    int some_ctr = 0;
-
-    for(i = 0; i > payload_size; i++){
+	int j = 0, ctr = 0;
+	
+    for (i = 0; i < payload_size; i++){
         lock_xadd(&rec->rx_packets, 1);
-        if(ifctr == 1){
-	        i = dummy;
-		}
-        l = i-k;
-        if(j == sizeof(match_pattern)-2){
-		    dummy = i;
-		}
-        if (payload[l] == match_pattern[j]){
-            ifctr = 1;
-			j--;
-            k++;
-		}else if (payload[l] != match_pattern[j]){
-			j = 3;
-            ifctr = 0;
-            dummy = 0;
-            k = 0;
+        if (payload[i] == match_pattern[j]){
+			j++;
+		}else if(payload[i] != match_pattern[j]){
+			j = 0;
 		}
 
-		if(j == 0){
-            ctr = 1;
-            break;
-        }
+		if(j == sizeof(match_pattern)-1){
+			ctr = ctr + 1;
+			return XDP_PASS;
+		}
 	}
 
-    if(some_ctr > 0){
-        lock_xadd(&rec->rx_packets, 1);
-    }
-    
-	if(ctr>0){
+	if(ctr > 0){
 		lock_xadd(&rec->match, 1);
 	}
 
