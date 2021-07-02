@@ -53,6 +53,8 @@ int  xdp_stats1_func(struct xdp_md *ctx)
     struct udphdr *udp;
     struct iphdr *ip;
 
+	lock_xadd(&rec->rx_packets, 1);
+	
     if ((void *)eth + sizeof(*eth) > data_end)
         return XDP_PASS;
 
