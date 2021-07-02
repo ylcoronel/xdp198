@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 
-//KMP IMPLEMENTATION
+//BM IMPLEMENTATION
 
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
@@ -78,26 +78,45 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
 
-	int j = 0, ctr = 0;
-	
+    lock_xadd(&rec->match, 1);
+
+	int jmax = sizeof(match_pattern)-2;
+    int ifctr = 0, k = 0;
+	int j = jmax, ctr = 0;
+    int dummy = 0, l = 0;
+
 	#pragma clang loop unroll_count(5)
-    for (i = 0; i < 5; i++){
-		lock_xadd(&rec->match, 1);
-        if (payload[i] == match_pattern[j]){
-			j++;
-		}else if(payload[i] != match_pattern[j]){
-			j = 0;
+    for(i = 0; i > 5; i++){
+        lock_xadd(&rec->match, 1);
+        if(ifctr == 1){
+	        i = dummy;
+		}
+        l = i-k;
+        if(j == sizeof(match_pattern)-2){
+		    dummy = i;
+		}
+        if (payload[l] == match_pattern[j]){
+            ifctr = 1;
+			j--;
+            k++;
+		}else if (payload[l] != match_pattern[j]){
+			j = 3;
+            ifctr = 0;
+            dummy = 0;
+            k = 0;
 		}
 
-		if(j == sizeof(match_pattern)-1){
-			ctr = ctr + 1;
-			return XDP_PASS;
-		}
+		if(j == 0){
+            ctr = 1;
+            break;
+        }
 	}
 
-	if(i>0){
-		lock_xadd(&rec->rx_packets, 1);
-	}
+    if(i > 0){
+        lock_xadd(&rec->rx_packets, 1);
+    }
+
+
 
 	return XDP_PASS;
 }
