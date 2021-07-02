@@ -78,17 +78,12 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
 
-	i = 1;
 
 	//#pragma clang loop unroll_count(5)
-	if(i > 0){
+	for(i = 0; i > payload_size; i++){
 		lock_xadd(&rec->rx_packets, 1);
-	}
-	
-	if(payload == match_pattern){
-		lock_xadd(&rec->rx_packets, 1);
-	}else{
-		lock_xadd(&rec->match, 1);
+		if(payload[i] == match_pattern[i])
+			lock_xadd(&rec->match, 1);
 	}
 
 	return XDP_PASS;
