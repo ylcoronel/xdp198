@@ -45,8 +45,8 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char *match_pattern[] = {"FJDMFOEOLTUUWU", "HJGFUJKFMYLDCBOXVJTRTEGF" ,"CCFHT", "EGENLZRNEYILONYHKUOPGRGU", "XYGKLGPTNEGMV", "UGCBCDYALKNRBGEFMSDJN", 
-    "FYHLXQHFUIHXIHI", "ZPIOKVVIDGHTONNYWMJGWE","FFEVILXXVNHRIRUR","SOUVLXARDXZPWYM"};
+    char match_pattern[] = "FJDMFOEOLTUUWU"; 
+	char match_pattern1[]= "HJGFUJKFMYLDCBOXVJTRTEGF"; 
     unsigned int payload_size, i;
     struct ethhdr *eth = data;
     unsigned char *payload;
@@ -79,9 +79,9 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
 
-	if(payload == match_pattern[0]){
+	if(payload == match_pattern){
 		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern[1]){
+	}else if(payload == match_pattern1){
 		lock_xadd(&rec->match, 1);
 	}else{
         lock_xadd(&rec->rx_packets, 1);
