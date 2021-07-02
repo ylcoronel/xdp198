@@ -81,7 +81,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	int ctr = 0, i; 
 
-	for (i = 0; i < payload_size; i++){
+	for (i = 0; i < 5; i++){
 		lock_xadd(&rec->match, 1);
         if (payload[i] != match_pattern[i]){
             ctr = 1;
