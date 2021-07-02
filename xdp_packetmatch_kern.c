@@ -54,7 +54,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	char match_pattern6[]= "FYHLXQHFUIHXIHI";
 	char match_pattern7[]= "ZPIOKVVIDGHTONNYWMJGWE";
 	char match_pattern8[]= "FFEVILXXVNHRIRUR";	
-	char match_pattern9[]= "SOUVLXARDXZPWYM"};
+	char match_pattern9[]= "SOUVLXARDXZPWYM";
 
     unsigned int payload_size;
     struct ethhdr *eth = data;
