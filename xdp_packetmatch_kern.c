@@ -78,15 +78,13 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
 
-    lock_xadd(&rec->match, 1);
-
 	int jmax = sizeof(match_pattern)-2;
     int ifctr = 0, k = 0;
 	int j = jmax, ctr = 0;
     int dummy = 0, l = 0;
 
-	#pragma clang loop unroll_count(5)
-    for(i = 0; i > 5; i++){
+	#pragma clang loop unroll_count(1)
+    for(i = 0; i > 1; i++){
         lock_xadd(&rec->match, 1);
         if(ifctr == 1){
 	        i = dummy;
