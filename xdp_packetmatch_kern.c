@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 
-//BM IMPLEMENTATION
+//KMP IMPLEMENTATION
 
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
@@ -45,8 +45,9 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char match_pattern[] = "FJDMFOEOLTUUWU";
-    unsigned int payload_size, i;
+    char match_pattern[] = "FJDMFOEOLTUUWU"; 
+
+    unsigned int payload_size;
     struct ethhdr *eth = data;
     unsigned char *payload;
     struct udphdr *udp;
@@ -78,43 +79,19 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
 
-	int jmax = sizeof(match_pattern)-2;
-    int ifctr = 0, k = 0;
-	int j = jmax, ctr = 0;
-    int dummy = 0, l = 0;
+	int j = 0, ctr = 0, i; 
 
-	#pragma clang loop unroll_count(1)
-    for(i = 0; i > 1; i++){
-        lock_xadd(&rec->match, 1);
-        if(ifctr == 1){
-	        i = dummy;
-		}
-        l = i-k;
-        if(j == sizeof(match_pattern)-2){
-		    dummy = i;
-		}
-        if (payload[l] == match_pattern[j]){
-            ifctr = 1;
-			j--;
-            k++;
-		}else if (payload[l] != match_pattern[j]){
-			j = 3;
-            ifctr = 0;
-            dummy = 0;
-            k = 0;
-		}
-
-		if(j == 0){
+	for (i = 0; i < payload_size; i++){
+        if (payload[i] != match_pattern[i]){
             ctr = 1;
-            break;
-        }
+		}
 	}
 
-    if(i > 0){
-        lock_xadd(&rec->rx_packets, 1);
-    }
-
-
+	if(ctr != 1){
+		lock_xadd(&rec->match, 1);
+	}else {
+		lock_xadd(&rec->rx_packets, 1);
+	}
 
 	return XDP_PASS;
 }
