@@ -46,25 +46,6 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
     char match_pattern[] = "FJDMFOEOLTUUWU"; 
-	char match_pattern1[]= "HJGFUJKFMYLDCBOXVJTRTEGF";
-	char match_pattern2[]= "CCFHT";
-	char match_pattern3[]= "EGENLZRNEYILONYHKUOPGRGU"; 
-	char match_pattern4[]= "XYGKLGPTNEGMV";
-	char match_pattern5[]= "UGCBCDYALKNRBGEFMSDJN";
-	char match_pattern6[]= "FYHLXQHFUIHXIHI";
-	char match_pattern7[]= "ZPIOKVVIDGHTONNYWMJGWE";
-	char match_pattern8[]= "FFEVILXXVNHRIRUR";	
-	char match_pattern9[]= "SOUVLXARDXZPWYM";
-	char match_pattern10[]= "SUZFMQZAM";
-  	char match_pattern11[]= "OXJQOBJKC";
-  	char match_pattern12[]= "JKFXID";
-  	char match_pattern13[]= "YBBFSCOEHNMKDWYLTNCDH";
-  	char match_pattern14[]= "ZSSDJNDMOIHRYLYOALRWJEPX";
-  	char match_pattern15[]= "VGRJBYKVSN";
-  	char match_pattern16[]= "JGLBFRYLI";
-  	char match_pattern17[]= "CZQPVXBD";
-  	char match_pattern18[]= "SFPHVRJWHATGBXQ";
-  	char match_pattern19[]= "BSPLVFDDUMAMVYVW";
 
     unsigned int payload_size;
     struct ethhdr *eth = data;
@@ -99,44 +80,6 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	}
 
 	if(payload == match_pattern){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern1){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern2){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern3){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern4){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern5){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern6){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern7){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern8){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern9){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern10){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern11){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern12){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern13){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern14){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern15){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern16){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern17){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern18){
-		lock_xadd(&rec->match, 1);
-	}else if(payload == match_pattern19){
 		lock_xadd(&rec->match, 1);
 	}else{
         lock_xadd(&rec->rx_packets, 1);
