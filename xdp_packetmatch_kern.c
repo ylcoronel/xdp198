@@ -78,7 +78,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
 
-	int j = 0, ctr = 0;
+	i = 1;
 
 	//#pragma clang loop unroll_count(5)
 	if(payload == match_pattern){
