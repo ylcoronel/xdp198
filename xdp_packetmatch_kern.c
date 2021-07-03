@@ -84,9 +84,15 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	// pattern 1
     
-	ctr = strcmp(match_pattern, (char *)payload);
-    if(ctr == 0)
-        lock_xadd(&rec->match, 1);
+	for (i = 0; i < 512; i++){
+        if (payload[i] == match_pattern[i]){
+            ctr = 1;
+		}else{
+            ctr = 0;
+        }
+	}
+
+    bpf_trace_printk("%d\n", ctr);
     
 	return XDP_PASS;
 }
