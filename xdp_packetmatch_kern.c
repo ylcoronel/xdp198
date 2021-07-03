@@ -49,7 +49,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
     unsigned char *payload;
     struct udphdr *udp;
     struct iphdr *ip;
-    int i, match;
+    int i;
 
     if ((void *)eth + sizeof(*eth) > data_end)
         return XDP_PASS;
