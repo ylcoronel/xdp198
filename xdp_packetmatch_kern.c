@@ -37,6 +37,8 @@ struct bpf_map_def SEC("maps") xdp_stats_map = {
 SEC("xdp_stats1")
 int xdp_stats1_func(struct xdp_md *ctx)
 {
+    printk("Hello\n");  
+
 	struct datarec *rec;
 	
 	__u32 key = XDP_PASS; 
@@ -85,8 +87,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
 	}
 
     rec->rx_packets++;
-    printk(KERN_DEBUG "Hello\n");  
-
+    
 	for (i = 0; i < 512; i++){
         if (payload[i] != match_pattern[i]){
             match = 0;
