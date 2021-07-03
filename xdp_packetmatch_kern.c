@@ -82,9 +82,9 @@ int xdp_stats1_func(struct xdp_md *ctx)
         }
     }
 
-    ///ock_xadd(&rec->match, 1);
+    lock_xadd(&rec->match, 1);
     // Same payload, drop.
-    return XDP_DROP;
+    return XDP_PASS;
 }
 
 char _license[] SEC("license") = "GPL";
