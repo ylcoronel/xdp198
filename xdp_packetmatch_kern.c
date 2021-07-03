@@ -81,7 +81,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
     }
 
     
-    //lock_xadd(&rec->match, 1);
+    rec->match++;
     return XDP_PASS;
 }
 
