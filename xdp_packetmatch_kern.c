@@ -82,7 +82,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
         }
     }
 
-    lock_xadd(&rec->match, 1);
+    //lock_xadd(&rec->match, 1);
     // Same payload, drop.
     return XDP_PASS;
 }
