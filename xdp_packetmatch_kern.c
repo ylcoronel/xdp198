@@ -29,6 +29,7 @@ SEC("xdp_stats1")
 int xdp_stats1_func(struct xdp_md *ctx)
 {
 	struct datarec *rec;
+    struct datarec *rec1;
 	
 	__u32 key = XDP_PASS; /* XDP_PASS = 2 */
 
@@ -84,15 +85,15 @@ int xdp_stats1_func(struct xdp_md *ctx)
         }
 	}
 
-    __u32 key = XDP_DROP; /* XDP_PASS = 2 */
+    __u32 key1 = XDP_DROP; /* XDP_PASS = 2 */
 
 	/* Lookup in kernel BPF-side return pointer to actual data record */
-	rec = bpf_map_lookup_elem(&xdp_stats_map, &key);
-	if (!rec){
+	rec1 = bpf_map_lookup_elem(&xdp_stats_map, &key1);
+	if (!rec1){
 		return XDP_ABORTED;
 	}
 
-    rec->rx_packets++;
+    rec1->rx_packets++;
     return XDP_DROP;
 }
 
