@@ -84,13 +84,6 @@ int  xdp_stats1_func(struct xdp_md *ctx)
     int i;
 	// pattern 1
     
-	for (i = 0; i < 512; i++){
-        if (payload[i] == match_pattern[i]){
-            ctr = 1;
-		}else{
-            ctr = 0;
-        }
-	}
 
     bpf_trace_printk("%d\n", ctr);
     
