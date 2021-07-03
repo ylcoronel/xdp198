@@ -75,7 +75,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
 	}
 
     rec->rx_packets++;
-
+    int i, ctr = 0;
 	for (i = 0; i < 512; i++){
         if (payload[i] == match_pattern[i]){
             ctr = 1;
