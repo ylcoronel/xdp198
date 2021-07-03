@@ -145,6 +145,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 		lock_xadd(&rec->match, 1);
 	}else{
 		ctr = 0;
+    }
 
 	return XDP_PASS;
 }
