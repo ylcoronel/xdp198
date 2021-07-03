@@ -45,8 +45,28 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char match_pattern[] = "FJDMFOEOLTUUWU";
-    unsigned int payload_size, i;
+    char match_pattern[] = "FJDMFOEOLTUUWU"; 
+	char match_pattern1[]= "HJGFUJKFMYLDCBOXVJTRTEGF";
+	char match_pattern2[]= "CCFHT";
+	char match_pattern3[]= "EGENLZRNEYILONYHKUOPGRGU"; 
+	char match_pattern4[]= "XYGKLGPTNEGMV";
+	char match_pattern5[]= "UGCBCDYALKNRBGEFMSDJN";
+	char match_pattern6[]= "FYHLXQHFUIHXIHI";
+	char match_pattern7[]= "ZPIOKVVIDGHTONNYWMJGWE";
+	char match_pattern8[]= "FFEVILXXVNHRIRUR";	
+	char match_pattern9[]= "SOUVLXARDXZPWYM";
+	char match_pattern10[]= "SUZFMQZAM";
+  	char match_pattern11[]= "OXJQOBJKC";
+  	char match_pattern12[]= "JKFXID";
+  	char match_pattern13[]= "YBBFSCOEHNMKDWYLTNCDH";
+  	char match_pattern14[]= "ZSSDJNDMOIHRYLYOALRWJEPX";
+  	char match_pattern15[]= "VGRJBYKVSN";
+  	char match_pattern16[]= "JGLBFRYLI";
+  	char match_pattern17[]= "CZQPVXBD";
+  	char match_pattern18[]= "SFPHVRJWHATGBXQ";
+  	char match_pattern19[]= "BSPLVFDDUMAMVYVW";
+
+    unsigned int payload_size;
     struct ethhdr *eth = data;
     unsigned char *payload;
     struct udphdr *udp;
@@ -78,31 +98,53 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
 
-	int j = 0, ctr = 0;
-	
-	#pragma clang loop unroll_count(5)
-    for (i = 0; i < 64; i++){
-        if (payload[i] == match_pattern[j]){
-			j++;
-		}else if(payload[i] != match_pattern[j]){
-			j = 0;
-		}
+	int ctr = 0;
 
-		if(j == sizeof(match_pattern)-1){
-			ctr = ctr + 1;
-			return XDP_PASS;
-		}
+	// pattern 1
+	if(payload[0] == match_pattern[0]){
+		ctr++;
+	}
+	if(payload[1] == match_pattern[1]){
+		ctr++;
+	}
+	if(payload[2] == match_pattern[2]){
+		ctr++;
+	}
+	if(payload[3] == match_pattern[3]){
+		ctr++;
+	}
+	if(payload[4] == match_pattern[4]){
+		ctr++;
+	}
+	if(payload[5] == match_pattern[5]){
+		ctr++;
+	}
+	if(payload[6] == match_pattern[6]){
+		ctr++;
+	}
+	if(payload[7] == match_pattern[7]){
+		ctr++;
+	}
+	if(payload[8] == match_pattern[8]){
+		ctr++;
+	}
+	if(payload[9] == match_pattern[9]){
+		ctr++;
+	}
+	if(payload[10] == match_pattern[10]){
+		ctr++;
+	}
+	if(payload[11]] == match_pattern[11]){
+		ctr++;
+	}
+	if(payload[12] == match_pattern[12]){
+		ctr++;
 	}
 
-	if(i>0){
-		lock_xadd(&rec->rx_packets, 1);
-	}
-
-
-	if(ctr > 0){
+	if(ctr == 13){
 		lock_xadd(&rec->match, 1);
-	}
-
+	}else{
+		ctr = 0;
 
 	return XDP_PASS;
 }
