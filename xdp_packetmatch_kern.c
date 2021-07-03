@@ -26,9 +26,8 @@ struct bpf_map_def SEC("maps") xdp_stats_map = {
 #endif
 
 SEC("xdp_stats1")
-int  xdp_stats1_func(struct xdp_md *ctx)
+int xdp_stats1_func(struct xdp_md *ctx)
 {
-
 	struct datarec *rec;
 	
 	__u32 key = XDP_PASS; /* XDP_PASS = 2 */
@@ -83,8 +82,9 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         }
     }
 
+    lock_xadd(&rec->match, 1);
     // Same payload, drop.
-    return XDP_DROP;
+    return XDP_PASS;
 }
 
 char _license[] SEC("license") = "GPL";
