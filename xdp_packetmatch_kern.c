@@ -75,19 +75,17 @@ int xdp_stats1_func(struct xdp_md *ctx)
 	}
 
     rec->rx_packets++;
-    int i;
     //int ctr = 0;
 
-	for (i = 0; i < 5; i++){
-        if (i < payload_size){
-            if (payload[i] == match_pattern[i]){
-                rec->match++;
-            }
-        }else if(i>=payload_size){
-            return XDP_PASS;
-        }
-        
-	}
+	if (payload[0] != match_pattern[0]){
+        return XDP_PASS;
+    }else if (payload[1] != match_pattern[1]){
+        return XDP_PASS;
+    }else{
+        rec->match++;
+    }
+
+
 
     
     
