@@ -81,7 +81,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	}
 
 	int ctr = 0;
-
+    int i;
 	// pattern 1
     
 	for (i = 0; i < 512; i++){
