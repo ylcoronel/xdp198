@@ -73,17 +73,17 @@ int xdp_stats1_func(struct xdp_md *ctx)
     if ((void *)payload + payload_size > data_end){
         return XDP_PASS;
 	}
-
-    int i;
     
-	for (i = 0; i < 512; i++){
-        if (payload[i] != match_pattern[i]){
-            return XDP_PASS;
-        }
+	if (payload[0] == match_pattern[0]){
+            lock_xadd(&rec->match, 1);
     }
-
-    lock_xadd(&rec->match, 1);
-    // Same payload, drop.
+    if (payload[1] == match_pattern[1]){
+            lock_xadd(&rec->match, 1);
+    }
+    if (payload[2] == match_pattern[2]){
+            lock_xadd(&rec->match, 1);
+    }
+    
     return XDP_PASS;
 }
 
