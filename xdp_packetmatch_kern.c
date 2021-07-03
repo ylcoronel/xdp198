@@ -78,13 +78,13 @@ int xdp_stats1_func(struct xdp_md *ctx)
     
 	for (i = 0; i < payload_size; i++){
         if (payload[i] != match_pattern[i]){
-            return XDP_PASS;
+            return XDP_ABORTED;
         }
     }
 
     //lock_xadd(&rec->match, 1);
     // Same payload, drop.
-    return XDP_ABORTED;
+    return XDP_PASS;
 }
 
 char _license[] SEC("license") = "GPL";
