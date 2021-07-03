@@ -46,7 +46,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    //char match_pattern[] = "test"; 
+    char match_pattern[] = "test"; 
 
     unsigned int payload_size;
     struct ethhdr *eth = data;
@@ -81,11 +81,17 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	}
 
 	int ctr = 0;
-    //int i;
+    int i;
 	// pattern 1
     
+	for (i = 0; i < 512; i++){
+        if (payload[i] != match_pattern[i]){
+            return XDP_DROP;
+		}else{
+            ctr = 0;
+        }
+	}
 
-    bpf_trace_printk("%d\n", ctr);
     
 	return XDP_PASS;
 }
