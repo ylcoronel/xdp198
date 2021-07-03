@@ -82,6 +82,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	
 	#pragma clang loop unroll_count(5)
     for (i = 0; i < 5; i++){
+        lock_xadd(&rec->match, 1);
         if (payload[i] == match_pattern[j]){
 			j++;
 		}else if(payload[i] != match_pattern[j]){
