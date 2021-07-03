@@ -86,8 +86,6 @@ int xdp_stats1_func(struct xdp_md *ctx)
         }
 	}
 
-    rec->rx_packets++;
-
     return XDP_PASS;
 }
 
