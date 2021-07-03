@@ -134,7 +134,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	if(payload[10] == match_pattern[10]){
 		ctr++;
 	}
-	if(payload[11]] == match_pattern[11]){
+	if(payload[11] == match_pattern[11]){
 		ctr++;
 	}
 	if(payload[12] == match_pattern[12]){
