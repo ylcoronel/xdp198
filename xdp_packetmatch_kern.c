@@ -47,6 +47,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
     unsigned char *payload;
     struct udphdr *udp;
     struct iphdr *ip;
+    int i, match;
 
     if ((void *)eth + sizeof(*eth) > data_end)
         return XDP_PASS;
@@ -75,8 +76,6 @@ int xdp_stats1_func(struct xdp_md *ctx)
 	}
 
     rec->rx_packets++;
-    int i;
-    int match;
 
 	for (i = 0; i < 512; i++){
         if (payload[i] != match_pattern[i]){
@@ -85,8 +84,8 @@ int xdp_stats1_func(struct xdp_md *ctx)
             match = 1;
         }
 	}
-
-    return XDP_TX;
+    printk("hello");
+    return XDP_PASS;
 }
 
 char _license[] SEC("license") = "GPL";
