@@ -89,11 +89,19 @@ int  xdp_stats1_func(struct xdp_md *ctx)
     if(payload[1] == match_pattern[1]){
 		ctr++;
 	}
-    
+
+    if(payload[2] == match_pattern[2]){
+		ctr++;
+	}
+
+    if(payload[3] == match_pattern[3]){
+		ctr++;
+	}
+
 	if(ctr == 13){
 		lock_xadd(&rec->match, 1);
 	}else{
-		ctr = 0;
+		lock_xadd(&rec->rx_packets, 1);
     }
 
 	return XDP_PASS;
