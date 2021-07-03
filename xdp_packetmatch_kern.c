@@ -86,6 +86,10 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 		ctr++;
 	}
 
+    if(payload[1] == match_pattern[1]){
+		ctr++;
+	}
+    
 	if(ctr == 13){
 		lock_xadd(&rec->match, 1);
 	}else{
