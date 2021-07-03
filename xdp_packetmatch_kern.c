@@ -1,48 +1,15 @@
-/* SPDX-License-Identifier: GPL-2.0 */
-
-//KMP IMPLEMENTATION
-
-#include <linux/bpf.h>
-#include <bpf/bpf_helpers.h>
 #include <arpa/inet.h>
+#include <linux/bpf.h>
 #include <linux/if_ether.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
 
-#include "common_kern_user.h" /* defines: struct datarec; */
-
-struct bpf_map_def SEC("maps") xdp_stats_map = {
-	.type        = BPF_MAP_TYPE_ARRAY,
-	.key_size    = sizeof(__u32),
-	.value_size  = sizeof(struct datarec),
-	.max_entries = XDP_ACTION_MAX,
-};
-
-/* LLVM maps __sync_fetch_and_add() as a built-in function to the BPF atomic add
- * instruction (that is BPF_STX | BPF_XADD | BPF_W for word sizes)
- */
-#ifndef lock_xadd
-#define lock_xadd(ptr, val)	((void) __sync_fetch_and_add(ptr, val))
-#endif
-
-SEC("xdp_stats1")
-int xdp_stats1_func(struct xdp_md *ctx)
+int xdp_func(struct xdp_md *ctx)
 {
-	struct datarec *rec;
-	
-	__u32 key = XDP_PASS; /* XDP_PASS = 2 */
-
-	/* Lookup in kernel BPF-side return pointer to actual data record */
-	rec = bpf_map_lookup_elem(&xdp_stats_map, &key);
-	if (!rec){
-		return XDP_ABORTED;
-	}
-
-	void *data_end = (void *)(long)ctx->data_end;
+    void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char match_pattern[] = "test"; 
-
-    unsigned int payload_size;
+    char match_pattern[] = "test";
+    unsigned int payload_size, i;
     struct ethhdr *eth = data;
     unsigned char *payload;
     struct udphdr *udp;
@@ -62,32 +29,25 @@ int xdp_stats1_func(struct xdp_md *ctx)
     if ((void *)udp + sizeof(*udp) > data_end)
         return XDP_PASS;
 
-	// change this
-    if (udp->dest != ntohs(5201))
+    if (udp->dest != ntohs(5005))
         return XDP_PASS;
 
     payload_size = ntohs(udp->len) - sizeof(*udp);
+    // Here we use "size - 1" to account for the final '\0' in "test".
+    // This '\0' may or may not be in your payload, adjust if necessary.
+    if (payload_size != sizeof(match_pattern) - 1) 
+        return XDP_PASS;
 
     // Point to start of payload.
     payload = (unsigned char *)udp + sizeof(*udp);
-    if ((void *)payload + payload_size > data_end){
+    if ((void *)payload + payload_size > data_end)
         return XDP_PASS;
-	}
 
-    rec->rx_packets++;
-    int i, ctr = 0;
-	for (i = 0; i < 512; i++){
-        if (payload[i] == match_pattern[i]){
-            ctr = 1;
-        }
-	}
+    // Compare each byte, exit if a difference is found.
+    for (i = 0; i < payload_size; i++)
+        if (payload[i] != match_pattern[i])
+            return XDP_PASS;
 
-    if(ctr == 1){
-        rec->match++;
-    }
-    
-    return XDP_PASS;
+    // Same payload, drop.
+    return XDP_DROP;
 }
-
-char _license[] SEC("license") = "GPL";
-
