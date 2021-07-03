@@ -75,22 +75,16 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
 
-	int ctr = 0;
-    char dummy[5] = {};
     int i;
-    for(i = 0; i < 4; i++){
-        dummy[i] = payload[i];
+    
+	for (i = 0; i < payload_size; i++){
+        if (payload[i] != match_pattern[i]){
+            return XDP_PASS;
+        }
     }
 
-    ctr = __builtin_memcmp(dummy, match_pattern, 4);
-
-    if(ctr == 0){
-        lock_xadd(&rec->match, 1);
-        return XDP_PASS;
-    }else{
-        return XDP_PASS;
-    }
-	return XDP_PASS;
+    // Same payload, drop.
+    return XDP_DROP;
 }
 
 char _license[] SEC("license") = "GPL";
