@@ -74,8 +74,10 @@ int xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
     
-	if (payload[0] == match_pattern[0]){
-        lock_xadd(&rec->match, 1);
+	if (payload[0] != match_pattern[0]){
+        return XDP_PASS;
+    }else{
+        return XDP_DROP;
     }
     
     
