@@ -87,15 +87,13 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 		}else{
             ctr = 0;
         }
-	}
 
-	if(ctr == 1)
-        return XDP_DROP;
-    else{
-        lock_xadd(&rec->rx_packets, 1);
-        return XDP_PASS;
-    }
-    
+        if(ctr == 1){
+            lock_xadd(&rec->match, 1);
+        }else{
+            lock_xadd(&rec->rx_packets, 1);
+        }
+	}
 
 	return XDP_PASS;
 }
