@@ -78,10 +78,12 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	int ctr = 0;
 
     ctr = __builtin_memcmp((char *)payload, match_pattern, 4);
-    if(ctr == 0)
+    if(ctr == 0){
         lock_xadd(&rec->match, 1);
-
-    
+        return XDP_PASS;
+    }else
+        return XDP_PASS;
+        
 	return XDP_PASS;
 }
 
