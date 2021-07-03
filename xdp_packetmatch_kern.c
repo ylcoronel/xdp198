@@ -76,7 +76,6 @@ int xdp_stats1_func(struct xdp_md *ctx)
 	}
 
     rec->rx_packets++;
-    int ctr = 0;
     int i;
 
 	for (i = 0; i < 512; i++){
@@ -85,15 +84,6 @@ int xdp_stats1_func(struct xdp_md *ctx)
         }
 	}
 
-    __u32 key1 = XDP_DROP; /* XDP_PASS = 2 */
-
-	/* Lookup in kernel BPF-side return pointer to actual data record */
-	rec1 = bpf_map_lookup_elem(&xdp_stats_map, &key1);
-	if (!rec1){
-		return XDP_ABORTED;
-	}
-
-    rec1->rx_packets++;
     return XDP_DROP;
 }
 
