@@ -3,6 +3,7 @@
 #include <linux/if_ether.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
+#include <bpf/bpf_helpers.h>
 
 SEC("xdp")
 int xdp_func(struct xdp_md *ctx)
