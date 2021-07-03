@@ -20,6 +20,13 @@ struct bpf_map_def SEC("maps") xdp_stats_map = {
 	.max_entries = XDP_ACTION_MAX,
 };
 
+#define printk(fmt, ...)					            \
+({								                        \
+	       char ____fmt[] = fmt;				        \
+	       bpf_trace_printk(____fmt, sizeof(____fmt),	\
+				##__VA_ARGS__);			                \
+})
+
 /* LLVM maps __sync_fetch_and_add() as a built-in function to the BPF atomic add
  * instruction (that is BPF_STX | BPF_XADD | BPF_W for word sizes)
  */
@@ -32,7 +39,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
 {
 	struct datarec *rec;
 	
-	__u32 key = XDP_DROP; 
+	__u32 key = XDP_PASS; 
 
 	/* Lookup in kernel BPF-side return pointer to actual data record */
 	rec = bpf_map_lookup_elem(&xdp_stats_map, &key);
@@ -49,7 +56,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
     unsigned char *payload;
     struct udphdr *udp;
     struct iphdr *ip;
-    int i;
+    int i, match;
 
     if ((void *)eth + sizeof(*eth) > data_end)
         return XDP_PASS;
@@ -79,13 +86,15 @@ int xdp_stats1_func(struct xdp_md *ctx)
 
     rec->rx_packets++;
 
-	for (i = 0; i < 64; i++){
+	for (i = 0; i < 512; i++){
         if (payload[i] != match_pattern[i]){
-            return XDP_PASS;
+            match = 0;
+        }else{
+            match = 1;
         }
-	}
-    
-    return XDP_DROP;
+    }
+    printk("Pattern Matched\n");    
+    return XDP_PASS;
 }
 
 char _license[] SEC("license") = "GPL";
