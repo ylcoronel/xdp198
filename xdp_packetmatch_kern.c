@@ -32,7 +32,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
 {
 	struct datarec *rec;
 	
-	__u32 key = XDP_DROP; /* XDP_PASS = 2 */
+	__u32 key = XDP_DROP; 
 
 	/* Lookup in kernel BPF-side return pointer to actual data record */
 	rec = bpf_map_lookup_elem(&xdp_stats_map, &key);
@@ -79,7 +79,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
 
     rec->rx_packets++;
 
-	for (i = 0; i < 512; i++){
+	for (i = 0; i < 64; i++){
         if (payload[i] != match_pattern[i]){
             return XDP_PASS;
         }
