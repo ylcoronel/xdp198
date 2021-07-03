@@ -76,20 +76,20 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	}
 
 	int ctr = 0;
-    char dummy[5] = {NULL};
+    char dummy[5] = {};
     int i;
     for(i = 0; i < 4; i++){
         dummy[i] = payload[i];
     }
 
     ctr = __builtin_memcmp(dummy, match_pattern, 4);
-    
+
     if(ctr == 0){
         lock_xadd(&rec->match, 1);
         return XDP_PASS;
-    }else
+    }else{
         return XDP_PASS;
-
+    }
 	return XDP_PASS;
 }
 
