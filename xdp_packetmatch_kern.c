@@ -29,7 +29,6 @@ SEC("xdp_stats1")
 int xdp_stats1_func(struct xdp_md *ctx)
 {
 	struct datarec *rec;
-    struct datarec *rec1;
 	
 	__u32 key = XDP_PASS; /* XDP_PASS = 2 */
 
@@ -77,14 +76,19 @@ int xdp_stats1_func(struct xdp_md *ctx)
 
     rec->rx_packets++;
     int i;
+    int match;
 
 	for (i = 0; i < 512; i++){
         if (payload[i] != match_pattern[i]){
             return XDP_PASS;
+        }else{
+            match = 1;
         }
 	}
 
-    return XDP_DROP;
+    rec->rx_packets++;
+
+    return XDP_PASS;
 }
 
 char _license[] SEC("license") = "GPL";
