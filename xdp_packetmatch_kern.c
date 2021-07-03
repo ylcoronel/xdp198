@@ -8,6 +8,7 @@
 #include <linux/if_ether.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
+#include <string.h>
 
 #include "common_kern_user.h" /* defines: struct datarec; */
 
@@ -45,7 +46,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char match_pattern[] = "FJDMFOEOLTUUWU"; 
+    char match_pattern[] = "test"; 
 
     unsigned int payload_size;
     struct ethhdr *eth = data;
@@ -82,25 +83,10 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	int ctr = 0;
 
 	// pattern 1
-	if(payload[0] == match_pattern[0]){
-		ctr = ctr + 1;
-	}
-
-    if(payload[1] == match_pattern[1]){
-		ctr = ctr + 1;
-	}
-
-    if(payload[2] == match_pattern[2]){
-		ctr = ctr + 1;
-	}
-
-
-	if(ctr == 3){
-		lock_xadd(&rec->match, 1);
-	}else{
-		lock_xadd(&rec->rx_packets, 1);
-    }
-
+    
+	ctr = strcmp(match_pattern, (char *)payload);
+    
+    
 	return XDP_PASS;
 }
 
