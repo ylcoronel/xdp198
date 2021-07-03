@@ -45,9 +45,8 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char match_pattern[512] = "FJDMFOEOLTUUWU"; 
-
-    unsigned int payload_size;
+    char match_pattern[] = "FJDMFOEOLTUUWU";
+    unsigned int payload_size, i;
     struct ethhdr *eth = data;
     unsigned char *payload;
     struct udphdr *udp;
@@ -79,21 +78,31 @@ int  xdp_stats1_func(struct xdp_md *ctx)
         return XDP_PASS;
 	}
 
-	int ctr = 0, i; 
-    #pragma clang loop unroll_count(1)
-	for (i = 0; i < 64; i++){
-        if (payload[i] == match_pattern[i]){
-            ctr = 1;
-		}else{
-            ctr = 0;
-        }
+	int j = 0, ctr = 0;
+	
+	#pragma clang loop unroll_count(1)
+    for (i = 0; i < 512; i++){
+        if (payload[i] == match_pattern[j]){
+			j++;
+		}else if(payload[i] != match_pattern[j]){
+			j = 0;
+		}
 
-        if(ctr == 1){
-            return XDP_DROP;
-        }else{
-            return XDP_PASS;
-        }
+		if(j == sizeof(match_pattern)-1){
+			ctr = ctr + 1;
+			return XDP_PASS;
+		}
 	}
+
+	if(i>0){
+		lock_xadd(&rec->rx_packets, 1);
+	}
+
+
+	if(ctr > 0){
+		lock_xadd(&rec->match, 1);
+	}
+
 
 	return XDP_PASS;
 }
