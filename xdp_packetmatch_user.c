@@ -118,16 +118,15 @@ static void stats_print(struct stats_record *stats_rec,
 	double period;
 	__u64 packets;
 	double pps; /* packets per sec */
-	int i;
+
 	/* Assignment#2: Print other XDP actions stats  */
-	for (i = 0; i < XDP_ACTION_MAX; i++)
 	{
 		char *fmt = "%-12s %'11lld pkts (%'10.0f pps)"
+			//" %'11lld Kbytes (%'6.0f Mbits/s)"
 			" period:%f\n";
-		const char *action = action2str(i);
-
-		rec  = &stats_rec->stats[i];
-		prev = &stats_prev->stats[i];
+		const char *action = action2str(XDP_PASS);
+		rec  = &stats_rec->stats[0];
+		prev = &stats_prev->stats[0];
 
 		period = calc_period(rec, prev);
 		if (period == 0)
@@ -136,11 +135,9 @@ static void stats_print(struct stats_record *stats_rec,
 		packets = rec->total.rx_packets - prev->total.rx_packets;
 		pps     = packets / period;
 
-
 		printf(fmt, action, rec->total.rx_packets, pps, period);
-		
+		printf("Matched packets: %lld\n", rec->total.match);
 	}
-	printf("Matched packets: %lld\n", rec->total.match);
 }
 
 /* BPF_MAP_TYPE_ARRAY */
