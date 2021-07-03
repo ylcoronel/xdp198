@@ -8,14 +8,9 @@
 #include <linux/if_ether.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
-#include <string.h>
 
 #include "common_kern_user.h" /* defines: struct datarec; */
 
-/* Lesson#1: See how a map is defined.
- * - Here an array with XDP_ACTION_MAX (max_)entries are created.
- * - The idea is to keep stats per (enum) xdp_action
- */
 struct bpf_map_def SEC("maps") xdp_stats_map = {
 	.type        = BPF_MAP_TYPE_ARRAY,
 	.key_size    = sizeof(__u32),
@@ -81,16 +76,10 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	}
 
 	int ctr = 0;
-    int i;
-	// pattern 1
-    
-	for (i = 0; i < 512; i++){
-        if (payload[i] != match_pattern[i]){
-            return XDP_DROP;
-		}else{
-            ctr = 0;
-        }
-	}
+
+    ctr = __builtin_memcmp((char *)payload, match_pattern, 4);
+    if(ctr == 0)
+        lock_xadd(&rec->match, 1);
 
     
 	return XDP_PASS;
