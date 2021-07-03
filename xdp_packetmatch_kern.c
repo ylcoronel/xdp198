@@ -85,42 +85,6 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 	if(payload[0] == match_pattern[0]){
 		ctr++;
 	}
-	if(payload[1] == match_pattern[1]){
-		ctr++;
-	}
-	if(payload[2] == match_pattern[2]){
-		ctr++;
-	}
-	if(payload[3] == match_pattern[3]){
-		ctr++;
-	}
-	if(payload[4] == match_pattern[4]){
-		ctr++;
-	}
-	if(payload[5] == match_pattern[5]){
-		ctr++;
-	}
-	if(payload[6] == match_pattern[6]){
-		ctr++;
-	}
-	if(payload[7] == match_pattern[7]){
-		ctr++;
-	}
-	if(payload[8] == match_pattern[8]){
-		ctr++;
-	}
-	if(payload[9] == match_pattern[9]){
-		ctr++;
-	}
-	if(payload[10] == match_pattern[10]){
-		ctr++;
-	}
-	if(payload[11] == match_pattern[11]){
-		ctr++;
-	}
-	if(payload[12] == match_pattern[12]){
-		ctr++;
-	}
 
 	if(ctr == 13){
 		lock_xadd(&rec->match, 1);
