@@ -8,6 +8,8 @@
 #include <linux/if_ether.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
+#include <linux/module.h>  
+#include <linux/kernel.h>
 
 #include "common_kern_user.h" /* defines: struct datarec; */
 
