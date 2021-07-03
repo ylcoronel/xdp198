@@ -138,7 +138,9 @@ static void stats_print(struct stats_record *stats_rec,
 
 
 		printf(fmt, action, rec->total.rx_packets, pps, period);
+		
 	}
+	printf("Matched packets: %lld\n", rec->total.match);
 }
 
 /* BPF_MAP_TYPE_ARRAY */
