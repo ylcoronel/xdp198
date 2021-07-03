@@ -83,25 +83,19 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	// pattern 1
 	if(payload[0] == match_pattern[0]){
-		ctr = 1;
-	}else{
-        ctr = 0;
-    }
+		ctr = ctr + 1;
+	}
 
     if(payload[1] == match_pattern[1]){
-		ctr = 1;
-	}else{
-        ctr = 0;
-    }
+		ctr = ctr + 1;
+	}
 
     if(payload[2] == match_pattern[2]){
-		ctr = 1;
-	}else{
-        ctr = 0;
-    }
+		ctr = ctr + 1;
+	}
 
 
-	if(ctr == 1){
+	if(ctr == 3){
 		lock_xadd(&rec->match, 1);
 	}else{
 		lock_xadd(&rec->rx_packets, 1);
