@@ -4,6 +4,7 @@
 #include <linux/ip.h>
 #include <linux/udp.h>
 
+SEC("xdp")
 int xdp_func(struct xdp_md *ctx)
 {
     void *data_end = (void *)(long)ctx->data_end;
@@ -51,3 +52,5 @@ int xdp_func(struct xdp_md *ctx)
     // Same payload, drop.
     return XDP_DROP;
 }
+
+char _license[] SEC("license") = "GPL";
