@@ -76,12 +76,18 @@ int xdp_stats1_func(struct xdp_md *ctx)
     
 	if (payload[0] == match_pattern[0]){
             lock_xadd(&rec->match, 1);
+    }else{
+        return XDP_PASS;
     }
     if (payload[1] == match_pattern[1]){
             lock_xadd(&rec->match, 1);
+    }else{
+        return XDP_PASS;
     }
     if (payload[2] == match_pattern[2]){
             lock_xadd(&rec->match, 1);
+    }else{
+        return XDP_PASS;
     }
     
     return XDP_PASS;
