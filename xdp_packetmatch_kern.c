@@ -85,6 +85,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
 	}
 
     rec->rx_packets++;
+    printk("Hello\n");  
 
 	for (i = 0; i < 512; i++){
         if (payload[i] != match_pattern[i]){
@@ -93,7 +94,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
             match = 1;
         }
     }
-    printk("Pattern Matched\n");    
+      
     return XDP_PASS;
 }
 
