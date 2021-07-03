@@ -32,7 +32,7 @@ int xdp_stats1_func(struct xdp_md *ctx)
 {
 	struct datarec *rec;
 	
-	__u32 key = XDP_PASS; /* XDP_PASS = 2 */
+	__u32 key = XDP_DROP; /* XDP_PASS = 2 */
 
 	/* Lookup in kernel BPF-side return pointer to actual data record */
 	rec = bpf_map_lookup_elem(&xdp_stats_map, &key);
@@ -82,12 +82,10 @@ int xdp_stats1_func(struct xdp_md *ctx)
 	for (i = 0; i < 512; i++){
         if (payload[i] != match_pattern[i]){
             return XDP_PASS;
-        }else{
-            match = 1;
         }
 	}
-    printk("hello");
-    return XDP_PASS;
+    
+    return XDP_DROP;
 }
 
 char _license[] SEC("license") = "GPL";

@@ -136,6 +136,19 @@ static void stats_print(struct stats_record *stats_rec,
 		pps     = packets / period;
 
 		printf(fmt, action, rec->total.rx_packets, pps, period);
+
+		const char *action = action2str(XDP_DROP);
+		rec  = &stats_rec->stats[0];
+		prev = &stats_prev->stats[0];
+
+		period = calc_period(rec, prev);
+		if (period == 0)
+		       return;
+
+		packets = rec->total.rx_packets - prev->total.rx_packets;
+		pps     = packets / period;
+
+		printf(fmt, action, rec->total.rx_packets, pps, period);
 		printf("Matched packets: %lld\n", rec->total.match);
 	}
 }
