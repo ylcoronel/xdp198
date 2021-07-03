@@ -45,7 +45,7 @@ int  xdp_stats1_func(struct xdp_md *ctx)
 
 	void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
-    char match_pattern[] = "FJDMFOEOLTUUWU"; 
+    char match_pattern[512] = "FJDMFOEOLTUUWU"; 
 
     unsigned int payload_size;
     struct ethhdr *eth = data;
