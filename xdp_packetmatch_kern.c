@@ -73,10 +73,13 @@ int xdp_stats1_func(struct xdp_md *ctx)
     if ((void *)payload + payload_size > data_end){
         return XDP_PASS;
 	}
-    
+    lock_xadd(&rec->rx_packets, 1);
+
 	if (payload[0] != match_pattern[0]){
         return XDP_PASS;
     }
+
+    lock_xadd(&rec->match, 1);
     
     return XDP_PASS;
 }
